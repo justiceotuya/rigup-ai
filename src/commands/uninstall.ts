@@ -4,6 +4,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { execa } from "execa";
 import { readState, settingsDirs } from "../state.js";
+import { contextVariantTag } from "../contextVariant.js";
 import { ollamaUninstallSteps } from "../uninstallPlan.js";
 import {
   introBanner,
@@ -47,7 +48,14 @@ export async function runUninstall(): Promise<void> {
     if (!state) {
       warnNote("No RigUp AI state found, so there's nothing recorded to remove models for.");
     } else {
-      const models = new Set([state.models.chatAgent, state.models.autocomplete].filter(Boolean));
+      const models = new Set(
+        [
+          state.models.chatAgent,
+          state.models.autocomplete,
+          // The 32k-context variant created for Kilo Code (see contextVariant.ts).
+          state.models.chatAgent ? contextVariantTag(state.models.chatAgent) : "",
+        ].filter(Boolean)
+      );
       for (const model of models) {
         stepNote("🗑️ ", `Removing model ${pc.cyan(model)}...`);
         try {

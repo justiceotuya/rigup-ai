@@ -28,6 +28,7 @@ import { findAgentExtensionCandidate } from "../agentExtensions.js";
 import { CONTINUE_EXTENSION } from "../continueExtension.js";
 import { offerExtensionInstall } from "../offerExtensionInstall.js";
 import { patchKiloConfig } from "../kiloConfigWriter.js";
+import { ensureContextVariant, AGENT_CONTEXT_TOKENS } from "../contextVariant.js";
 
 export interface InitOptions {
   tier?: Tier;
@@ -244,8 +245,19 @@ export async function runInit(options: InitOptions): Promise<void> {
   // (via the editor CLI, offerExtensionInstall) is safe for all three;
   // only the settings write is Kilo-specific.
   async function configureKiloAndTest(): Promise<void> {
+    // Kilo needs a 32k context; Ollama's default is 4k and Kilo can't ask
+    // for more over its OpenAI-compatible endpoint. See contextVariant.ts.
+    let kiloModel = finalModels.chatAgent;
     try {
-      const result = await patchKiloConfig(finalModels.chatAgent);
+      kiloModel = await ensureContextVariant(finalModels.chatAgent);
+      successNote(`Created ${pc.cyan(kiloModel)} — ${finalModels.chatAgent} with a ${AGENT_CONTEXT_TOKENS / 1024}k context window for Kilo Code`);
+    } catch (err) {
+      warnNote(
+        `Couldn't create a ${AGENT_CONTEXT_TOKENS / 1024}k-context variant (${(err as Error).message}). Kilo will use Ollama's default 4k context, which is too small for agent tasks.`
+      );
+    }
+    try {
+      const result = await patchKiloConfig(kiloModel);
       successNote(
         `${result.created ? "Created" : "Updated"} Kilo Code config → ${result.path}`
       );
@@ -256,9 +268,9 @@ export async function runInit(options: InitOptions): Promise<void> {
 
     stepNote(
       "🧪",
-      `Sending a test prompt to ${pc.cyan(finalModels.chatAgent)} to confirm it's actually working...`
+      `Sending a test prompt to ${pc.cyan(kiloModel)} to confirm it's actually working...`
     );
-    const test = await testGenerate(finalModels.chatAgent);
+    const test = await testGenerate(kiloModel);
     if (test.ok) {
       const preview = test.response?.trim().replace(/\s+/g, " ").slice(0, 80);
       successNote(`Connected and responding${preview ? `: "${preview}"` : "."}`);

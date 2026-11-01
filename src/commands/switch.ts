@@ -7,6 +7,7 @@ import { discoverAgentExtensions } from "../extensionDiscovery.js";
 import { agentExtensionSetupSteps } from "../agentExtensionGuide.js";
 import { getModelFamily } from "../modelFamilies.js";
 import { patchKiloConfig } from "../kiloConfigWriter.js";
+import { ensureContextVariant } from "../contextVariant.js";
 
 export interface SwitchOptions {
   family?: string;
@@ -72,19 +73,27 @@ export async function runSwitch(role: string, size: string, options: SwitchOptio
     );
     for (const match of matches) {
       if (match.candidate.id === "kilocode.kilo-code") {
+        let kiloModel = modelName;
         try {
-          const result = await patchKiloConfig(modelName);
-          console.log(pc.gray(`Updated Kilo Code config → ${result.path}`));
+          kiloModel = await ensureContextVariant(modelName);
+        } catch (err) {
+          console.log(
+            pc.yellow(`Couldn't create a 32k-context variant (${(err as Error).message}); Kilo will get Ollama's 4k default.`)
+          );
+        }
+        try {
+          const result = await patchKiloConfig(kiloModel);
+          console.log(pc.gray(`Updated Kilo Code config → ${result.path} (model ${kiloModel})`));
           if (result.updatedModes.length > 0) {
-            console.log(pc.gray(`  Also moved Kilo modes to ${modelName}: ${result.updatedModes.join(", ")}`));
+            console.log(pc.gray(`  Also moved Kilo modes to ${kiloModel}: ${result.updatedModes.join(", ")}`));
           }
         } catch (err) {
           console.log(pc.yellow(`Couldn't update Kilo Code config: ${(err as Error).message}`));
           continue;
         }
 
-        console.log(pc.gray(`Sending a test prompt to ${modelName}...`));
-        const test = await testGenerate(modelName);
+        console.log(pc.gray(`Sending a test prompt to ${kiloModel}...`));
+        const test = await testGenerate(kiloModel);
         if (test.ok) {
           console.log(pc.green(`Connected and responding.`));
         } else {

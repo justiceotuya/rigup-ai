@@ -4,6 +4,8 @@ import { isOllamaAvailable, isServerReachable, listModels } from "../ollama.js";
 import { editorById } from "../editors.js";
 import { globalStorageDir } from "../paths.js";
 import { discoverAgentExtensions } from "../extensionDiscovery.js";
+import { readKiloModel } from "../kiloConfigWriter.js";
+import { variantContextTokens, AGENT_CONTEXT_TOKENS } from "../contextVariant.js";
 
 type CheckResult = { label: string; ok: boolean; detail?: string };
 
@@ -94,6 +96,27 @@ export async function runDoctor(): Promise<void> {
           ok: true,
           detail: discontinued ? `⚠️  ${match.candidate.note}` : undefined,
         });
+
+        // Green across the board used to coexist with a Kilo that couldn't
+        // work: at Ollama's 4k default it loses its tool instructions.
+        if (match.candidate.id === "kilocode.kilo-code") {
+          const kiloModel = await readKiloModel();
+          if (kiloModel?.startsWith("ollama/")) {
+            const tag = kiloModel.slice("ollama/".length);
+            const ctx = variantContextTokens(tag);
+            const bigEnough = ctx !== null && ctx >= AGENT_CONTEXT_TOKENS;
+            const present = bigEnough && serverUp ? (await listModels()).some((m) => m.name === tag) : bigEnough;
+            results.push({
+              label: `Kilo Code context window (needs ≥${AGENT_CONTEXT_TOKENS / 1024}k)`,
+              ok: bigEnough && present,
+              detail: !bigEnough
+                ? `Kilo uses ${tag} at Ollama's default 4k context — agent mode will misbehave. Re-run \`rigup init\` (or \`rigup switch chat <size>\`) to create a 32k variant.`
+                : present
+                  ? undefined
+                  : `${tag} is configured but missing from Ollama. Re-run \`rigup init\`.`,
+            });
+          }
+        }
       }
     }
   }

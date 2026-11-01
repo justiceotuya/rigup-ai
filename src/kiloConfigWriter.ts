@@ -124,3 +124,13 @@ export async function patchKiloConfig(chatModel: string): Promise<KiloPatchResul
   await fs.writeFile(configPath, text, "utf-8");
   return { path: configPath, created, updatedModes };
 }
+
+/** The model Kilo currently uses by default (e.g. "ollama/qwen2.5-coder:7b"), or null. */
+export async function readKiloModel(): Promise<string | null> {
+  try {
+    const parsed = parse(await fs.readFile(kiloConfigPath(), "utf-8")) as { model?: unknown } | undefined;
+    return typeof parsed?.model === "string" ? parsed.model : null;
+  } catch {
+    return null;
+  }
+}
