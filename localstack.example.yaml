@@ -1,0 +1,21 @@
+# Commit this file as `localstack.yaml` at your repo root, and everyone on
+# the team gets the same model choices when they run `localstack init` —
+# no hand-editing required. LocalStack searches upward from the current
+# directory and stops at the first .git it finds, so this only applies
+# within this repo.
+
+version: 1
+
+# Which model family to use. See src/modelFamilies.ts for the full list
+# (qwen2.5-coder | starcoder2 | codegemma | deepseek-coder-v2).
+modelFamily: qwen2.5-coder
+
+# Optional: override the chat and/or autocomplete model for specific
+# hardware tiers. Anything not listed here falls back to the family's
+# built-in recommendation for that tier.
+tiers:
+  16gb:
+    chat: qwen2.5-coder:7b
+  # 8gb:
+  #   chat: qwen2.5-coder:3b
+  #   autocomplete: qwen2.5-coder:1.5b

@@ -1,0 +1,37 @@
+{
+  "name": "localstack-cli",
+  "version": "0.1.0",
+  "description": "Provision and manage a local, offline AI coding stack (Ollama + Continue.dev + Roo Code + Aider)",
+  "type": "module",
+  "bin": {
+    "localstack": "./dist/index.js"
+  },
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsup src/index.ts --format esm --target node18 --clean",
+    "postinstall": "node scripts/postinstall.mjs",
+    "link-cli": "node scripts/postinstall.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.9.1",
+    "commander": "^12.1.0",
+    "execa": "^9.3.0",
+    "jsonc-parser": "^3.3.1",
+    "picocolors": "^1.0.1",
+    "yaml": "^2.9.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.5.0",
+    "tsup": "^8.2.4",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.4",
+    "vitest": "^2.0.5"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
