@@ -6,17 +6,29 @@ import { parse as parseJsonc } from "jsonc-parser";
 
 let tmpHome: string;
 let originalHome: string | undefined;
+let originalUserProfile: string | undefined;
 
 beforeEach(async () => {
   tmpHome = await fs.mkdtemp(path.join(os.tmpdir(), "rigup-kilo-"));
   originalHome = process.env.HOME;
+  originalUserProfile = process.env.USERPROFILE;
+  // os.homedir() reads HOME on macOS/Linux but USERPROFILE on Windows; set
+  // both so these tests never touch the real ~/.config/kilo/kilo.jsonc.
   process.env.HOME = tmpHome;
+  process.env.USERPROFILE = tmpHome;
 });
 
 afterEach(async () => {
-  process.env.HOME = originalHome;
+  restoreEnv("HOME", originalHome);
+  restoreEnv("USERPROFILE", originalUserProfile);
   await fs.rm(tmpHome, { recursive: true, force: true });
 });
+
+function restoreEnv(key: string, value: string | undefined): void {
+  // Assigning undefined would set the literal string "undefined".
+  if (value === undefined) delete process.env[key];
+  else process.env[key] = value;
+}
 
 describe("kiloConfigPath", () => {
   it("resolves to ~/.config/kilo/kilo.jsonc — confirmed against Kilo's own docs, not guessed", async () => {
