@@ -215,6 +215,15 @@ you actually own.
 - [ ] Confirm declining the confirmation phrase (typing anything else) truly
       leaves Ollama untouched.
 
+## Results log
+
+| Date | Machine | Editor | What ran | Result |
+| --- | --- | --- | --- | --- |
+| 2026-11-01 | macOS, Apple Silicon, 16 GB (Ollama already installed and running) | Cursor | `rigup init` (recommended models), `rigup doctor` | ✅ Pass — tier detected as 16gb; `qwen2.5-coder:7b` + `:1.5b` pulled; Continue.dev config updated (existing user models untouched); Continue extension detected as installed; Kilo Code found and configured; test prompt answered "OK"; all 7 doctor checks green |
+| 2026-11-01 | same | Cursor | Rename migration on a real pre-rename config | ✅ Pass — no duplicate entries; Continue shows exactly two `RigUp AI — …` entries; Kilo label is `(RigUp AI)`. Note: the config's top-level `name: LocalStack` (written by the old version at creation) is intentionally left alone; see the cleanup issue |
+
+Still to run on real hardware: `switch`, `uninstall`, `guard`, `aider`, fresh-machine Ollama install (§1), Linux (§1), Windows (§6).
+
 ## What's already been verified, so you don't need to re-check it
 
 - Hardware/RAM tiering logic — unit tested directly.
