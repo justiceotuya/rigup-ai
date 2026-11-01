@@ -1,5 +1,7 @@
 # RigUp AI
 
+[![CI](https://github.com/justiceotuya/rigup-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/justiceotuya/rigup-ai/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+
 Provision and manage a local, offline AI coding stack: [Ollama](https://ollama.com) +
 [Continue.dev](https://continue.dev) + [Kilo Code](https://kilocode.ai) +
 optional [Aider](https://aider.chat) — hardware-aware, zero telemetry.
