@@ -64,7 +64,7 @@ export function modelsForTier(tier: Tier): ModelSet {
 
 /**
  * Detects the current machine's hardware profile. Accepts an optional
- * override tier (for `localstack init --tier 8gb`) so callers don't need
+ * override tier (for `rigup init --tier 8gb`) so callers don't need
  * a second code path for manual overrides.
  */
 export function detectHardware(overrideTier?: Tier): HardwareInfo {

@@ -22,7 +22,7 @@ const TeamProfileSchema = z.object({
 
 export type TeamProfile = z.infer<typeof TeamProfileSchema>;
 
-export const TEAM_PROFILE_FILENAME = "localstack.yaml";
+export const TEAM_PROFILE_FILENAME = "rigup.yaml";
 
 async function exists(target: string): Promise<boolean> {
   try {
@@ -34,7 +34,7 @@ async function exists(target: string): Promise<boolean> {
 }
 
 /**
- * Searches from startDir upward for a localstack.yaml, so a team can commit
+ * Searches from startDir upward for a rigup.yaml, so a team can commit
  * one at the repo root and everyone gets the same model choices without
  * hand-editing anything. Stops (inclusive) at the first .git directory
  * found, so it doesn't wander past a repo boundary into unrelated parent

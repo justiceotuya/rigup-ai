@@ -98,7 +98,7 @@ export async function runInit(options: InitOptions): Promise<void> {
     const shouldInstall = await confirmInstallOllama();
     if (!shouldInstall) {
       outroError(
-        "Skipped. Install Ollama manually from https://ollama.com, then re-run `localstack init`."
+        "Skipped. Install Ollama manually from https://ollama.com, then re-run `rigup init`."
       );
       process.exitCode = 1;
       return;
@@ -107,7 +107,7 @@ export async function runInit(options: InitOptions): Promise<void> {
     const installed = await installOllama();
     if (!installed) {
       outroError(
-        "Automatic install didn't complete. Install manually from https://ollama.com, then re-run `localstack init`."
+        "Automatic install didn't complete. Install manually from https://ollama.com, then re-run `rigup init`."
       );
       process.exitCode = 1;
       return;
@@ -115,7 +115,7 @@ export async function runInit(options: InitOptions): Promise<void> {
 
     if (os.platform() === "win32") {
       outroSuccess(
-        "Ollama installer launched — finish the setup window, then re-run `localstack init` to continue automatically. 🦙"
+        "Ollama installer launched — finish the setup window, then re-run `rigup init` to continue automatically. 🦙"
       );
       return;
     }
@@ -124,14 +124,14 @@ export async function runInit(options: InitOptions): Promise<void> {
     const ready = await waitForOllama();
     if (!ready) {
       outroSuccess(
-        "Ollama installed, but isn't detected in this shell session yet. Open a new terminal and re-run `localstack init` to continue. 🦙"
+        "Ollama installed, but isn't detected in this shell session yet. Open a new terminal and re-run `rigup init` to continue. 🦙"
       );
       return;
     }
 
     const shouldContinue = await confirmContinueSetup();
     if (!shouldContinue) {
-      outroSuccess("No problem — run `localstack init` again whenever you're ready to continue. 👋");
+      outroSuccess("No problem — run `rigup init` again whenever you're ready to continue. 👋");
       return;
     }
   }
@@ -146,7 +146,7 @@ export async function runInit(options: InitOptions): Promise<void> {
   const serverReady = await ensureOllamaServerRunning();
   if (!serverReady) {
     outroError(
-      "Couldn't get the Ollama server running. Try `ollama serve` in another terminal, then re-run `localstack init`."
+      "Couldn't get the Ollama server running. Try `ollama serve` in another terminal, then re-run `rigup init`."
     );
     process.exitCode = 1;
     return;
@@ -227,7 +227,7 @@ export async function runInit(options: InitOptions): Promise<void> {
     extensionLabel: CONTINUE_EXTENSION.label,
     manualUrl: CONTINUE_EXTENSION.manualUrl,
     afterInstallSteps: [
-      "Open the Continue panel — the LocalStack chat/agent and autocomplete models should already be listed from the config file above.",
+      "Open the Continue panel — the RigUp AI chat/agent and autocomplete models should already be listed from the config file above.",
     ],
   });
   if (continueInstall === "already-installed") {
@@ -264,7 +264,7 @@ export async function runInit(options: InitOptions): Promise<void> {
       successNote(`Connected and responding${preview ? `: "${preview}"` : "."}`);
     } else {
       warnNote(
-        `Test prompt failed (${test.error}). Kilo Code's config is set, but the model may not be answering yet — try again in a moment, or check \`localstack doctor\`.`
+        `Test prompt failed (${test.error}). Kilo Code's config is set, but the model may not be answering yet — try again in a moment, or check \`rigup doctor\`.`
       );
     }
   }
@@ -314,7 +314,7 @@ export async function runInit(options: InitOptions): Promise<void> {
       const steps = agentExtensionSetupSteps(match.candidate, finalModels.chatAgent);
       stepNote(
         "🧩",
-        `Found ${match.candidate.label} — LocalStack doesn't auto-configure this one (its settings storage isn't consistently documented), so wire it up manually:`
+        `Found ${match.candidate.label} — RigUp AI doesn't auto-configure this one (its settings storage isn't consistently documented), so wire it up manually:`
       );
       steps.forEach((step, i) => console.log(pc.gray(`   ${i + 1}. ${step}`)));
       if (match.candidate.status === "discontinued") {
@@ -338,5 +338,5 @@ export async function runInit(options: InitOptions): Promise<void> {
   };
   await writeState(state);
 
-  successNote("Done! Run `localstack doctor` to verify the setup.");
+  successNote("Done! Run `rigup doctor` to verify the setup.");
 }

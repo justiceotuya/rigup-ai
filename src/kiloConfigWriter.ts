@@ -59,7 +59,7 @@ async function fileExists(target: string): Promise<boolean> {
  * across model families and aren't safe to guess. Kilo's own catalog
  * (models.dev) fills in reasonable defaults when it recognizes the model;
  * for anything it doesn't recognize, the person should set these
- * deliberately once they know how the model behaves, not have LocalStack
+ * deliberately once they know how the model behaves, not have RigUp AI
  * assert facts about it that might be wrong.
  */
 export async function patchKiloConfig(chatModel: string): Promise<KiloPatchResult> {
@@ -75,7 +75,7 @@ export async function patchKiloConfig(chatModel: string): Promise<KiloPatchResul
     modify(
       text,
       ["provider", "ollama", "models", chatModel],
-      { name: `${chatModel} (LocalStack)` },
+      { name: `${chatModel} (RigUp AI)` },
       { formattingOptions: FORMATTING }
     )
   );

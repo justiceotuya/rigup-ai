@@ -1,6 +1,6 @@
 /**
- * Single source of truth for LocalStack subcommands — used by the
- * interactive launcher (`yarn dev` / bare `localstack`) and kept in sync
+ * Single source of truth for RigUp AI subcommands — used by the
+ * interactive launcher (`yarn dev` / bare `rigup`) and kept in sync
  * with the Commander registrations in index.ts by tests.
  */
 export type CliCommandName =
@@ -39,6 +39,6 @@ export const CLI_COMMANDS: readonly CliCommand[] = [
   },
   {
     name: "uninstall",
-    description: "Remove LocalStack settings, pulled models, and/or Ollama itself",
+    description: "Remove RigUp AI settings, pulled models, and/or Ollama itself",
   },
 ] as const;

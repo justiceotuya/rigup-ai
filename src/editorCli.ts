@@ -4,11 +4,11 @@ import type { EditorId } from "./editors.js";
 /**
  * The CLI binary each VS Code-family editor exposes, if the person has run
  * "Shell Command: Install '<editor>' in PATH" from that editor's command
- * palette (a one-time, per-editor, opt-in step — not something LocalStack
+ * palette (a one-time, per-editor, opt-in step — not something RigUp AI
  * can trigger itself). Verified for Cursor specifically: `cursor
  * --install-extension <id>` is a real, documented command, not guessed —
  * Cursor is a VS Code fork and mirrors VS Code's CLI interface for this.
- * `custom` editors have no known binary, since LocalStack doesn't know
+ * `custom` editors have no known binary, since RigUp AI doesn't know
  * what they are.
  */
 const EDITOR_CLI_BIN: Partial<Record<EditorId, string>> = {

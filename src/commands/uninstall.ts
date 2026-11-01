@@ -3,7 +3,7 @@ import os from "node:os";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { execa } from "execa";
-import { readState, LOCALSTACK_DIR } from "../state.js";
+import { readState, RIGUP_DIR } from "../state.js";
 import { ollamaUninstallSteps } from "../uninstallPlan.js";
 import {
   introBanner,
@@ -45,7 +45,7 @@ export async function runUninstall(): Promise<void> {
 
   if (targets.includes("models")) {
     if (!state) {
-      warnNote("No LocalStack state found, so there's nothing recorded to remove models for.");
+      warnNote("No RigUp AI state found, so there's nothing recorded to remove models for.");
     } else {
       const models = new Set([state.models.chatAgent, state.models.autocomplete].filter(Boolean));
       for (const model of models) {
@@ -97,10 +97,10 @@ export async function runUninstall(): Promise<void> {
   // from it, this ordering guarantees that data was still there to read.
   if (targets.includes("state")) {
     try {
-      await fs.rm(LOCALSTACK_DIR, { recursive: true, force: true });
-      successNote("Removed LocalStack settings.");
+      await fs.rm(RIGUP_DIR, { recursive: true, force: true });
+      successNote("Removed RigUp AI settings.");
     } catch {
-      warnNote(`Couldn't remove ${LOCALSTACK_DIR} — remove it manually if needed.`);
+      warnNote(`Couldn't remove ${RIGUP_DIR} — remove it manually if needed.`);
     }
   }
 

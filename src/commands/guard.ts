@@ -21,7 +21,7 @@ export async function runGuard(action: "start" | "stop"): Promise<void> {
     return;
   }
 
-  console.log(pc.bold("LocalStack guard — watching for overlapping heavy model jobs"));
+  console.log(pc.bold("RigUp AI guard — watching for overlapping heavy model jobs"));
   console.log(pc.gray("(Ctrl+C to stop)\n"));
 
   intervalHandle = setInterval(async () => {

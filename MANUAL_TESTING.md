@@ -21,19 +21,19 @@ you actually own.
 
 ## 1. Real `init` end-to-end (highest priority)
 
-- [ ] On a machine *without* Ollama installed, run `localstack init` and
+- [ ] On a machine *without* Ollama installed, run `rigup init` and
       actually say yes to the install prompt. Confirm the progress bar
       (Windows) or the script's own `curl --progress-bar` output
       (macOS/Linux) renders correctly, not garbled.
 - [ ] **New (macOS/Linux)**: confirm setup continues automatically after
       the install script finishes and you confirm the "Continue setting up
-      LocalStack now?" prompt — no manual re-run should be needed. This is
+      RigUp AI now?" prompt — no manual re-run should be needed. This is
       the part that most needs real-hardware confirmation: the retry logic
       (`waitForOllama` in `src/commands/init.ts`) and the confirmation gate
       (`confirmContinueSetup` in `src/prompts.ts`) are both unit-tested with
       mocks, but never watched succeed together against a real
       freshly-installed `ollama` binary and real PATH resolution.
-- [ ] **New**: confirm declining "Continue setting up LocalStack now?" exits
+- [ ] **New**: confirm declining "Continue setting up RigUp AI now?" exits
       cleanly without pulling any models or touching editor config — only
       Ollama itself should be installed at that point.
 - [ ] **New (Windows)**: confirm it still asks you to finish the installer
@@ -82,15 +82,15 @@ you actually own.
       that the prompt fires again), but never watched render as a real
       interactive menu.
 - [ ] Open Continue.dev in your actual editor afterward and confirm the two
-      model entries ("LocalStack — Chat/Agent" and "LocalStack — Autocomplete")
+      model entries ("RigUp AI — Chat/Agent" and "RigUp AI — Autocomplete")
       actually appear and work — chat responds, autocomplete ghost-text fires.
-- [ ] Run `localstack switch chat 3b`, then reopen Continue.dev and confirm
+- [ ] Run `rigup switch chat 3b`, then reopen Continue.dev and confirm
       the chat model actually changed (not just the config file).
 
 ## 2. Config Writer against a real pre-existing config
 
 - [ ] If you already have a `~/.continue/config.yaml` with your own models in
-      it, run `localstack init` and confirm your existing entries are
+      it, run `rigup init` and confirm your existing entries are
       **untouched** — this is the whole point of the merge-not-overwrite
       design, and it needs to be seen working against a real file, not just
       the synthetic fixtures in `configWriter.test.ts`.
@@ -102,7 +102,7 @@ you actually own.
 
 ## 3. Agent extension detection + config
 
-- [ ] With Kilo Code already installed, run `localstack init` and confirm it
+- [ ] With Kilo Code already installed, run `rigup init` and confirm it
       **auto-configures** it (not just detects it) — check
       `~/.config/kilo/kilo.jsonc` afterward for the `model`,
       `provider.ollama.models`, and `provider.ollama.options.baseURL`
@@ -128,11 +128,11 @@ you actually own.
       and fails with a sensible message when it isn't (e.g. try it against
       a model name that was never pulled).
 - [ ] With Kilo Code (or Roo Code, or Cline) actually installed, run
-      `localstack doctor` and confirm it's detected at the right path —
+      `rigup doctor` and confirm it's detected at the right path —
       this proves `globalStorageDir()` resolves correctly for your specific
       editor, not just in the mocked-`os` unit tests.
 - [ ] With *no* agentic extension installed, and your editor's CLI
-      (`cursor`, `code`, `windsurf`, or `codium`) on PATH, run `localstack
+      (`cursor`, `code`, `windsurf`, or `codium`) on PATH, run `rigup
       init` and confirm it offers to install Kilo Code automatically, that
       the install actually works, and that it gets configured + test-prompted
       immediately afterward — the extension should appear in your editor,
@@ -144,24 +144,24 @@ you actually own.
       accurate — it should mention the specific "Shell Command: Install
       '<bin>' in PATH" step needed to enable auto-install next time.
 - [ ] If Roo Code or Cline is what's installed (not Kilo Code), confirm
-      LocalStack correctly falls back to printing manual setup steps rather
+      RigUp AI correctly falls back to printing manual setup steps rather
       than attempting to write to `kilo.jsonc` (which wouldn't be their
       config file at all).
 
 ## 4. Interactive launcher and Continue.dev extension install
 
-- [ ] Run bare `localstack` (no subcommand) and confirm the command picker
+- [ ] Run bare `rigup` (no subcommand) and confirm the command picker
       renders correctly and dispatches to the right handler for each
       choice — `switch` and `guard` should then prompt for their required
       args (role/size, start/stop) rather than erroring. This was proven
       to render *something* in this sandbox (piped stdin showed the
       picker appear), but the full dispatch-and-prompt-for-args flow was
       only unit-tested with mocks, never driven interactively end-to-end.
-- [ ] Run `localstack init` with Continue.dev's extension **not** already
+- [ ] Run `rigup init` with Continue.dev's extension **not** already
       installed, and confirm it offers to install it via the editor CLI
       (`code --install-extension Continue.continue`), separately from
       writing the config file. Confirm the extension actually shows up in
-      your editor afterward, already pointed at the LocalStack models from
+      your editor afterward, already pointed at the RigUp AI models from
       the config file `init` wrote moments earlier.
 - [ ] Confirm `isExtensionInstalledViaCli` (`--list-extensions`) correctly
       reports an extension as already-installed when it's present but its
@@ -172,7 +172,7 @@ you actually own.
 
 - [ ] Run `npm install` on a real machine as a regular (non-root) user and
       confirm `scripts/postinstall.mjs` builds, links, and reports
-      `localstack` as ready — this was verified end-to-end in the build
+      `rigup` as ready — this was verified end-to-end in the build
       sandbox, but that sandbox runs as root, where `npm link`'s
       permission behavior can differ from a normal user's global npm
       directory (sometimes requiring `sudo`, or npm being configured with
@@ -180,16 +180,16 @@ you actually own.
       accurate too if it does need elevated permissions — it should print
       a clear "run `npm link` yourself" message, not fail silently or
       break `npm install`.
-- [ ] Confirm `localstack --help` / `localstack doctor` actually work in a
+- [ ] Confirm `rigup --help` / `rigup doctor` actually work in a
       **fresh terminal window** afterward, not just the same shell session
       `npm install` ran in (some shells cache PATH lookups per-session).
-- [ ] Confirm `LOCALSTACK_SKIP_POSTINSTALL=1 npm install` and a CI
+- [ ] Confirm `RIGUP_SKIP_POSTINSTALL=1 npm install` and a CI
       environment (`CI=true`) both correctly skip the automatic link —
       verified with `npm run postinstall` directly in the sandbox, but not
       through an actual `npm install` invocation with those variables set,
       and not in a real CI runner.
 - [ ] Confirm nesting this package inside another project's `node_modules`
-      (e.g. `npm install ./localstack` from a different project) does
+      (e.g. `npm install ./rigup` from a different project) does
       *not* trigger the build+link — this guard was written and reasoned
       through but never actually exercised against a real nested install.
 
@@ -206,7 +206,7 @@ you actually own.
 ## 7. Uninstall — the genuinely destructive path
 
 - [ ] On a disposable VM or a machine you don't mind reinstalling Ollama on,
-      run `localstack uninstall`, select "Ollama itself," and actually type
+      run `rigup uninstall`, select "Ollama itself," and actually type
       the confirmation phrase. Confirm:
       - macOS/Linux: the `sudo` commands in `uninstallPlan.ts` actually work
         against a real install (service stops, binary removed, app bundle
@@ -229,6 +229,6 @@ you actually own.
   and `yaml` library, including a regression test for a real formatting bug
   (flow-style vs block-style YAML) that was caught and fixed during
   development, not just assumed correct.
-- `uninstall`'s file-deletion path (`~/.localstack` removal) — exercised
+- `uninstall`'s file-deletion path (`~/.rigup` removal) — exercised
   end-to-end against a fake `$HOME`, confirmed via `ls` before/after.
 - The destructive-confirmation phrase matching — unit tested directly.

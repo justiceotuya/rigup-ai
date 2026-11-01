@@ -1,4 +1,4 @@
-# LocalStack — System Design & Spec
+# RigUp AI — System Design & Spec
 *Turning "here's my manual local AI coding stack" into a repeatable tool*
 
 Source: a thread describing a local, $0, offline AI coding setup —
@@ -35,7 +35,7 @@ tuned by RAM tier (8GB → 3B/1.5B models, 16GB+ → 7B).
 
 ```
                         ┌────────────────────────┐
-                        │   LocalStack CLI        │
+                        │   RigUp AI CLI        │
                         │  (single Go/Node binary)│
                         └───────────┬─────────────┘
                                     │
@@ -58,11 +58,11 @@ tuned by RAM tier (8GB → 3B/1.5B models, 16GB+ → 7B).
                                    └───────────────┘
 ```
 
-Everything runs as local processes talking to `localhost:11434`. LocalStack itself is stateless between invocations — it reads machine state and existing config, writes config, and exits. No daemon required for v1 (the RAM guard can start as a lightweight opt-in background check rather than a persistent service).
+Everything runs as local processes talking to `localhost:11434`. RigUp AI itself is stateless between invocations — it reads machine state and existing config, writes config, and exits. No daemon required for v1 (the RAM guard can start as a lightweight opt-in background check rather than a persistent service).
 
 ### 3. Deep Dive
 
-**Data model** — a single local manifest, `~/.localstack/state.json`:
+**Data model** — a single local manifest, `~/.rigup/state.json`:
 ```json
 {
   "ram_gb": 16,
@@ -83,12 +83,12 @@ Everything runs as local processes talking to `localhost:11434`. LocalStack itse
 
 **CLI surface (API contract)**
 ```
-localstack init                 # detect hardware, pull models, write configs
-localstack init --tier 8gb      # override auto-detected tier
-localstack doctor               # re-validate: ollama reachable, models present, configs valid
-localstack switch chat 7b       # swap the chat/agent model without full re-init
-localstack guard start|stop     # optional RAM-contention watcher
-localstack aider                # launch aider pre-wired to the configured model
+rigup init                 # detect hardware, pull models, write configs
+rigup init --tier 8gb      # override auto-detected tier
+rigup doctor               # re-validate: ollama reachable, models present, configs valid
+rigup switch chat 7b       # swap the chat/agent model without full re-init
+rigup guard start|stop     # optional RAM-contention watcher
+rigup aider                # launch aider pre-wired to the configured model
 ```
 
 **Model tiering logic**
@@ -108,7 +108,7 @@ localstack aider                # launch aider pre-wired to the configured model
 
 This is explicitly a single-user, single-machine tool — "scale" here means robustness across hardware/OS variance, not concurrent users:
 - Test matrix: macOS (Intel/Apple Silicon), Ubuntu, Windows/WSL; 8GB/16GB/32GB RAM tiers.
-- Model registry availability is Ollama's problem, not ours — but `localstack doctor` should clearly surface "Ollama unreachable" vs "model missing" vs "config invalid" as distinct failure modes, since users will self-debug from CLI output alone.
+- Model registry availability is Ollama's problem, not ours — but `rigup doctor` should clearly surface "Ollama unreachable" vs "model missing" vs "config invalid" as distinct failure modes, since users will self-debug from CLI output alone.
 - No crash-safety concerns beyond standard CLI idempotency: every command should be safely re-runnable.
 
 ### 5. Trade-offs
@@ -120,7 +120,7 @@ This is explicitly a single-user, single-machine tool — "scale" here means rob
 | CLI-first, no GUI in v1 | Faster to ship, matches the audience (developers who read Twitter threads about Ollama configs), but raises the bar for non-CLI-comfortable users |
 | Bundling Aider as optional, not default | Keeps core install lean; revisit if usage data shows most users want it |
 
-**What to revisit as it grows:** if adoption clusters around teams (not just solo devs), a shared config profile (`localstack.yaml` checked into a repo so a whole team gets the same tiered setup) becomes the natural v2 — but that's explicitly out of scope for v1 below.
+**What to revisit as it grows:** if adoption clusters around teams (not just solo devs), a shared config profile (`rigup.yaml` checked into a repo so a whole team gets the same tiered setup) becomes the natural v2 — but that's explicitly out of scope for v1 below.
 
 ---
 
@@ -133,12 +133,12 @@ Developers who want a local, offline, $0 AI coding stack currently have to manua
 1. Reduce time from "I want this" to "working local AI coding stack" to under 10 minutes of hands-on time.
 2. Eliminate manual JSON config editing for Continue.dev, Roo Code, and Aider.
 3. Prevent RAM-exhaustion crashes caused by running multiple heavy local models simultaneously.
-4. Make the setup auditable and repeatable (`localstack doctor` gives a clear pass/fail, anytime).
+4. Make the setup auditable and repeatable (`rigup doctor` gives a clear pass/fail, anytime).
 5. Zero telemetry, zero network calls beyond the initial model pull — preserve the core value prop of the original stack.
 
 ### Non-Goals
 - **Not a hosted service or SaaS.** Defeats the $0/offline premise — explicitly local-only.
-- **Not a replacement for Continue.dev, Roo Code, or Aider.** LocalStack configures them; it doesn't reimplement their functionality.
+- **Not a replacement for Continue.dev, Roo Code, or Aider.** RigUp AI configures them; it doesn't reimplement their functionality.
 - **Not a model router that picks cloud vs. local per-query.** v1 assumes the user has already decided "local for this task."
 - **Not multi-user/team config sync in v1.** Single-machine only for now.
 - **Not GPU-cluster or workstation-tier support in v1.** Scoped to the 8–16GB laptop case the original thread targets.
@@ -156,21 +156,21 @@ Developers who want a local, offline, $0 AI coding stack currently have to manua
 - Hardware detection (RAM, OS) with manual override.
 - Model provisioning via `ollama pull` for the detected tier.
 - Config generation for Continue.dev and Roo Code.
-- `localstack doctor` health check with clear, distinct failure states.
+- `rigup doctor` health check with clear, distinct failure states.
 - No network calls except model pulls from the Ollama registry.
 
 **Nice-to-Have (P1)**
-- Aider integration (`localstack aider` launcher).
+- Aider integration (`rigup aider` launcher).
 - RAM guard with terminal notification when two heavy jobs overlap.
-- `localstack switch` to change model tier without full re-init.
+- `rigup switch` to change model tier without full re-init.
 
 **Future Considerations (P2)**
 - Windows-native (non-WSL) support.
-- Shared team config profile (`localstack.yaml` in-repo).
+- Shared team config profile (`rigup.yaml` in-repo).
 - Support for model families beyond qwen2.5-coder as new local coding models ship.
 
 ### Success Metrics
-- **Leading:** % of users who run `localstack doctor` successfully within 24 hours of `init` (setup actually worked); median time-to-working-setup.
+- **Leading:** % of users who run `rigup doctor` successfully within 24 hours of `init` (setup actually worked); median time-to-working-setup.
 - **Leading:** repeat CLI invocations per user in week 1 (signal that it's a tool, not a one-time script).
 - **Lagging:** GitHub stars/installs sustained month-over-month (proxy for real retention, since there's no telemetry to measure usage directly — by design).
 

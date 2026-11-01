@@ -1,6 +1,6 @@
-# Commit this file as `localstack.yaml` at your repo root, and everyone on
-# the team gets the same model choices when they run `localstack init` —
-# no hand-editing required. LocalStack searches upward from the current
+# Commit this file as `rigup.yaml` at your repo root, and everyone on
+# the team gets the same model choices when they run `rigup init` —
+# no hand-editing required. RigUp AI searches upward from the current
 # directory and stops at the first .git it finds, so this only applies
 # within this repo.
 

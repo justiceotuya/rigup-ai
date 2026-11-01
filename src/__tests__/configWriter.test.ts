@@ -8,7 +8,7 @@ import { patchContinueConfig } from "../configWriter.js";
 let tmpDir: string;
 
 beforeEach(async () => {
-  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "localstack-configwriter-"));
+  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "rigup-configwriter-"));
 });
 
 afterEach(async () => {
@@ -90,7 +90,7 @@ describe("patchContinueConfig", () => {
     expect(userEntry).toBeTruthy();
     expect(userEntry.provider).toBe("anthropic");
 
-    // LocalStack's entries were added alongside it.
+    // RigUp AI's entries were added alongside it.
     expect(items.some((m: any) => m.model === "qwen2.5-coder:7b")).toBe(true);
     expect(items.some((m: any) => m.model === "qwen2.5-coder:1.5b")).toBe(true);
     expect(items).toHaveLength(3);
@@ -102,7 +102,7 @@ describe("patchContinueConfig", () => {
       autocomplete: "qwen2.5-coder:1.5b",
     });
 
-    // Simulate `localstack switch chat 7b`.
+    // Simulate `rigup switch chat 7b`.
     const result = await patchContinueConfig(tmpDir, {
       chatAgent: "qwen2.5-coder:7b",
       autocomplete: "qwen2.5-coder:1.5b",
@@ -145,7 +145,7 @@ describe("patchContinueConfig", () => {
     });
     const raw = await fs.readFile(result.path, "utf-8");
 
-    expect(raw).toContain("  - name: LocalStack");
+    expect(raw).toContain("  - name: RigUp AI");
     expect(raw).not.toMatch(/models:\s*\[/); // no flow-style array opener
     expect(raw).not.toContain("{ name:"); // no flow-style map opener
   });

@@ -1,10 +1,22 @@
 {
-  "name": "localstack-cli",
+  "name": "rigup-ai",
   "version": "0.1.0",
-  "description": "Provision and manage a local, offline AI coding stack (Ollama + Continue.dev + Roo Code + Aider)",
+  "description": "Provision and manage a local, offline AI coding stack (Ollama + Continue.dev + Kilo Code + Aider)",
+  "license": "MIT",
+  "author": "Justice Otuya",
+  "keywords": [
+    "ollama",
+    "continue",
+    "kilo-code",
+    "aider",
+    "local-llm",
+    "ai-coding",
+    "offline",
+    "cli"
+  ],
   "type": "module",
   "bin": {
-    "localstack": "./dist/index.js"
+    "rigup": "./dist/index.js"
   },
   "scripts": {
     "dev": "tsx src/index.ts",

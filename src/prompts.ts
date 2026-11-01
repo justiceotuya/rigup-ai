@@ -10,13 +10,13 @@ export interface EditorChoice {
 }
 
 function bail(): never {
-  p.cancel("👋 No worries — setup cancelled. Run `localstack init` again whenever you're ready.");
+  p.cancel("👋 No worries — setup cancelled. Run `rigup init` again whenever you're ready.");
   process.exit(1);
 }
 
 export function introBanner(): void {
   p.intro(
-    `${pc.bgMagenta(pc.black(pc.bold(" 🚀 LocalStack ")))} ${pc.cyan(
+    `${pc.bgMagenta(pc.black(pc.bold(" 🚀 RigUp AI ")))} ${pc.cyan(
       "let's get your local AI coding stack humming ✨"
     )}`
   );
@@ -68,7 +68,7 @@ export async function selectEditor(): Promise<EditorChoice> {
 
 export async function confirmInstallOllama(): Promise<boolean> {
   const answer = await p.confirm({
-    message: `🦙 ${pc.bold("Ollama isn't installed yet — want LocalStack to grab it for you?")}`,
+    message: `🦙 ${pc.bold("Ollama isn't installed yet — want RigUp AI to grab it for you?")}`,
     active: "Yes, install it! 🚀",
     inactive: "No, I'll do it myself",
   });
@@ -204,7 +204,7 @@ export async function confirmInstallExtension(editorLabel: string, extensionLabe
 
 export async function confirmContinueSetup(): Promise<boolean> {
   const answer = await p.confirm({
-    message: `🦙 ${pc.bold("Ollama is ready! Continue setting up LocalStack now?")}`,
+    message: `🦙 ${pc.bold("Ollama is ready! Continue setting up RigUp AI now?")}`,
     active: "Yes, continue 🚀",
     inactive: "Not now",
     initialValue: true,
@@ -226,10 +226,10 @@ export async function selectUninstallTargets(
   const selection = await p.multiselect({
     message: `🧹 ${pc.bold("What would you like to remove?")} ${pc.dim("(Space to select, Enter to confirm)")}`,
     options: [
-      { value: "state" as const, label: "🗂️  LocalStack settings (~/.localstack)" },
+      { value: "state" as const, label: "🗂️  RigUp AI settings (~/.rigup)" },
       {
         value: "models" as const,
-        label: `🧠 Models LocalStack pulled${modelSummary ? ` (${modelSummary})` : ""}`,
+        label: `🧠 Models RigUp AI pulled${modelSummary ? ` (${modelSummary})` : ""}`,
       },
       {
         value: "ollama" as const,
@@ -277,7 +277,7 @@ export async function confirmDeleteModelWeights(): Promise<boolean> {
 }
 
 /**
- * Interactive command picker for the bare `localstack` / `yarn dev`
+ * Interactive command picker for the bare `rigup` / `yarn dev`
  * invocation (no subcommand given). Returns null on cancel so the caller
  * can exit cleanly instead of erroring out.
  */

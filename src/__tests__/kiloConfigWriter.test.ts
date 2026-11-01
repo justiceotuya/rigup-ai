@@ -8,7 +8,7 @@ let tmpHome: string;
 let originalHome: string | undefined;
 
 beforeEach(async () => {
-  tmpHome = await fs.mkdtemp(path.join(os.tmpdir(), "localstack-kilo-"));
+  tmpHome = await fs.mkdtemp(path.join(os.tmpdir(), "rigup-kilo-"));
   originalHome = process.env.HOME;
   process.env.HOME = tmpHome;
 });
@@ -118,7 +118,7 @@ describe("patchKiloConfig", () => {
     const raw = await fs.readFile(result.path, "utf-8");
     const parsed = parseJsonc(raw);
 
-    // LocalStack's own change is applied...
+    // RigUp AI's own change is applied...
     expect(parsed.model).toBe("ollama/qwen2.5-coder:7b");
     expect(parsed.provider.ollama.models["qwen2.5-coder:7b"]).toBeTruthy();
     // ...but the user's existing anthropic config survives untouched.
@@ -143,7 +143,7 @@ describe("patchKiloConfig", () => {
     const { patchKiloConfig } = await import("../kiloConfigWriter.js");
 
     await patchKiloConfig("qwen2.5-coder:3b");
-    const result = await patchKiloConfig("qwen2.5-coder:7b"); // simulate `localstack switch`
+    const result = await patchKiloConfig("qwen2.5-coder:7b"); // simulate `rigup switch`
 
     const raw = await fs.readFile(result.path, "utf-8");
     const parsed = parseJsonc(raw);

@@ -8,15 +8,15 @@ import { discoverAgentExtensions } from "../extensionDiscovery.js";
 type CheckResult = { label: string; ok: boolean; detail?: string };
 
 export async function runDoctor(): Promise<void> {
-  console.log(pc.bold("🩺 LocalStack doctor\n"));
+  console.log(pc.bold("🩺 RigUp AI doctor\n"));
 
   const results: CheckResult[] = [];
 
   const state = await readState();
   results.push({
-    label: "State manifest (~/.localstack/state.json)",
+    label: "State manifest (~/.rigup/state.json)",
     ok: state !== null,
-    detail: state === null ? "Not found — run `localstack init` first." : undefined,
+    detail: state === null ? "Not found — run `rigup init` first." : undefined,
   });
 
   if (state) {
@@ -28,7 +28,7 @@ export async function runDoctor(): Promise<void> {
   results.push({
     label: "Ollama installed (binary on PATH)",
     ok: ollamaInstalled,
-    detail: ollamaInstalled ? undefined : "Not found. Run `localstack init` to install it.",
+    detail: ollamaInstalled ? undefined : "Not found. Run `rigup init` to install it.",
   });
 
   // Deliberately a separate check from the one above: the binary existing
@@ -44,7 +44,7 @@ export async function runDoctor(): Promise<void> {
       ? "Can't check — Ollama isn't installed."
       : serverUp
         ? undefined
-        : "Installed but not running. Try `ollama serve`, or re-run `localstack init`.",
+        : "Installed but not running. Try `ollama serve`, or re-run `rigup init`.",
   });
 
   if (serverUp && state) {
@@ -55,7 +55,7 @@ export async function runDoctor(): Promise<void> {
       results.push({
         label: `Model present: ${modelName} (${role})`,
         ok: present,
-        detail: present ? undefined : "Run `localstack init` to pull missing models.",
+        detail: present ? undefined : "Run `rigup init` to pull missing models.",
       });
     }
   }

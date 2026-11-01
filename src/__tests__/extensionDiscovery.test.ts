@@ -7,7 +7,7 @@ import { discoverAgentExtensions } from "../extensionDiscovery.js";
 let tmpDir: string;
 
 beforeEach(async () => {
-  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "localstack-discovery-"));
+  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "rigup-discovery-"));
 });
 
 afterEach(async () => {

@@ -13,11 +13,11 @@ export interface SwitchOptions {
 }
 
 /**
- * `localstack switch chat 7b` — swap a single role's model without
+ * `rigup switch chat 7b` — swap a single role's model without
  * redoing hardware detection or the full init flow. Role is "chat" or
  * "autocomplete"; size is a bare tag suffix like "3b" / "7b". Defaults to
  * whichever family is already recorded in state; pass --family to switch
- * families entirely (e.g. `localstack switch chat 7b --family starcoder2`).
+ * families entirely (e.g. `rigup switch chat 7b --family starcoder2`).
  */
 export async function runSwitch(role: string, size: string, options: SwitchOptions = {}): Promise<void> {
   if (role !== "chat" && role !== "autocomplete") {
@@ -28,7 +28,7 @@ export async function runSwitch(role: string, size: string, options: SwitchOptio
 
   const state = await readState();
   if (!state) {
-    console.log(pc.red("No LocalStack state found — run `localstack init` first."));
+    console.log(pc.red("No RigUp AI state found — run `rigup init` first."));
     process.exitCode = 1;
     return;
   }
@@ -87,7 +87,7 @@ export async function runSwitch(role: string, size: string, options: SwitchOptio
         } else {
           console.log(
             pc.yellow(
-              `Test prompt failed (${test.error}) — the config is set, but check \`localstack doctor\`.`
+              `Test prompt failed (${test.error}) — the config is set, but check \`rigup doctor\`.`
             )
           );
         }
@@ -105,5 +105,5 @@ export async function runSwitch(role: string, size: string, options: SwitchOptio
     }
   }
 
-  console.log(pc.green(`\nDone. Run \`localstack doctor\` to verify.`));
+  console.log(pc.green(`\nDone. Run \`rigup doctor\` to verify.`));
 }

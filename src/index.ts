@@ -13,11 +13,11 @@ import type { Tier } from "./detector.js";
 const program = new Command();
 
 program
-  .name("localstack")
+  .name("rigup")
   .description("Provision and manage a local, offline AI coding stack")
   .version("0.1.0");
 
-// Bare `localstack` / `yarn dev` — don't error; ask which command to run.
+// Bare `rigup` / `yarn dev` — don't error; ask which command to run.
 program.action(async () => {
   await runInteractiveLauncher();
 });

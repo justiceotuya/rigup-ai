@@ -14,8 +14,12 @@ export interface ContinueConfigResult {
 }
 
 const DEFAULT_API_BASE = "http://localhost:11434";
-const CHAT_ENTRY_NAME = "LocalStack — Chat/Agent (Ollama)";
-const AUTOCOMPLETE_ENTRY_NAME = "LocalStack — Autocomplete (Ollama)";
+const CHAT_ENTRY_NAME = "RigUp AI — Chat/Agent (Ollama)";
+const AUTOCOMPLETE_ENTRY_NAME = "RigUp AI — Autocomplete (Ollama)";
+// Entry names written before the project was renamed from "LocalStack".
+// Matching them lets an existing config be updated in place, not duplicated.
+const LEGACY_CHAT_ENTRY_NAME = "LocalStack — Chat/Agent (Ollama)";
+const LEGACY_AUTOCOMPLETE_ENTRY_NAME = "LocalStack — Autocomplete (Ollama)";
 
 async function fileExists(target: string): Promise<boolean> {
   try {
@@ -33,7 +37,13 @@ async function fileExists(target: string): Promise<boolean> {
  * updates the same entry instead of accumulating duplicates, while never
  * touching any model entry the user added themselves under a different name.
  */
-function upsertModelEntry(doc: Document, name: string, modelId: string, roles: string[]): void {
+function upsertModelEntry(
+  doc: Document,
+  name: string,
+  modelId: string,
+  roles: string[],
+  legacyNames: string[] = [],
+): void {
   let modelsNode = doc.get("models", true);
 
   if (!modelsNode || !isSeq(modelsNode)) {
@@ -50,7 +60,7 @@ function upsertModelEntry(doc: Document, name: string, modelId: string, roles: s
 
 
   const items = seq.items as YAMLMap[];
-  const existingIndex = items.findIndex((item) => isMap(item) && item.get("name") === name);
+  const existingIndex = items.findIndex((item) => isMap(item) && [name, ...legacyNames].includes(item.get("name") as string));
 
   const entry = doc.createNode({
     name,
@@ -70,7 +80,7 @@ function upsertModelEntry(doc: Document, name: string, modelId: string, roles: s
 }
 
 /**
- * Patches (or creates) Continue.dev's config.yaml with LocalStack's model
+ * Patches (or creates) Continue.dev's config.yaml with RigUp AI's model
  * assignments, without disturbing anything else the user has configured.
  *
  * Deliberately never edits the legacy config.json even if that's all that
@@ -96,11 +106,15 @@ export async function patchContinueConfig(
     const raw = await fs.readFile(yamlPath, "utf-8");
     doc = parseDocument(raw);
   } else {
-    doc = parseDocument("name: LocalStack\nversion: 1.0.0\nschema: v1\nmodels: []\n");
+    doc = parseDocument("name: RigUp AI\nversion: 1.0.0\nschema: v1\nmodels: []\n");
   }
 
-  upsertModelEntry(doc, CHAT_ENTRY_NAME, models.chatAgent, ["chat", "edit", "apply"]);
-  upsertModelEntry(doc, AUTOCOMPLETE_ENTRY_NAME, models.autocomplete, ["autocomplete"]);
+  upsertModelEntry(doc, CHAT_ENTRY_NAME, models.chatAgent, ["chat", "edit", "apply"], [
+    LEGACY_CHAT_ENTRY_NAME,
+  ]);
+  upsertModelEntry(doc, AUTOCOMPLETE_ENTRY_NAME, models.autocomplete, ["autocomplete"], [
+    LEGACY_AUTOCOMPLETE_ENTRY_NAME,
+  ]);
 
   await fs.writeFile(yamlPath, doc.toString(), "utf-8");
 

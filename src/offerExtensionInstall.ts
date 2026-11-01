@@ -45,7 +45,7 @@ export async function offerExtensionInstall(
 
   if (!cliAvailable) {
     const cliHint = cliBin
-      ? ` LocalStack looked for \`${cliBin}\` to install it automatically, but it isn't on PATH — run "Shell Command: Install '${cliBin}' in PATH" from ${editorLabel}'s command palette, then re-run \`localstack init\`.`
+      ? ` RigUp AI looked for \`${cliBin}\` to install it automatically, but it isn't on PATH — run "Shell Command: Install '${cliBin}' in PATH" from ${editorLabel}'s command palette, then re-run \`rigup init\`.`
       : "";
     warnNote(
       `${extensionLabel} isn't installed yet.${cliHint} Install manually anytime: ${manualUrl}`
