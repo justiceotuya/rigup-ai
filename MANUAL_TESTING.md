@@ -221,8 +221,10 @@ you actually own.
 | --- | --- | --- | --- | --- |
 | 2026-11-01 | macOS, Apple Silicon, 16 GB (Ollama already installed and running) | Cursor | `rigup init` (recommended models), `rigup doctor` | ✅ Pass — tier detected as 16gb; `qwen2.5-coder:7b` + `:1.5b` pulled; Continue.dev config updated (existing user models untouched); Continue extension detected as installed; Kilo Code found and configured; test prompt answered "OK"; all 7 doctor checks green |
 | 2026-11-01 | same | Cursor | Rename migration on a real pre-rename config | ✅ Pass — no duplicate entries; Continue shows exactly two `RigUp AI — …` entries; Kilo label is `(RigUp AI)`. Note: the config's top-level `name: LocalStack` (written by the old version at creation) is intentionally left alone; see the cleanup issue |
+| 2026-11-01 | same | Cursor | `rigup switch chat 3b` | ⚠️ Bug found, fixed — Continue entry updated in place and doctor green, but Kilo's per-mode models (`agent.<mode>.model`) stayed on 7b, so every Kilo mode kept the old model. Fixed: modes that matched the old default now move with it |
+| 2026-11-01 | same | Cursor | `rigup uninstall` → settings only | ⚠️ Bug found, fixed — `~/.rigup` removed as chosen, but the pre-rename `~/.localstack` was left behind and the state reader falls back to it, so the tool would look configured from stale data. Fixed: uninstall removes both |
 
-Still to run on real hardware: `switch`, `uninstall`, `guard`, `aider`, fresh-machine Ollama install (§1), Linux (§1), Windows (§6).
+Still to run on real hardware: re-run `switch` and `uninstall` with the fixes, `guard`, `aider`, fresh-machine Ollama install (§1), Linux (§1), Windows (§6).
 
 ## What's already been verified, so you don't need to re-check it
 
