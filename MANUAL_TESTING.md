@@ -224,8 +224,10 @@ you actually own.
 | 2026-11-01 | same | Cursor | `rigup switch chat 3b` | ⚠️ Bug found, fixed — Continue entry updated in place and doctor green, but Kilo's per-mode models (`agent.<mode>.model`) stayed on 7b, so every Kilo mode kept the old model. Fixed: modes that matched the old default now move with it |
 | 2026-11-01 | same | Cursor | `rigup uninstall` → settings only | ⚠️ Bug found, fixed — `~/.rigup` removed as chosen, but the pre-rename `~/.localstack` was left behind and the state reader falls back to it, so the tool would look configured from stale data. Fixed: uninstall removes both |
 | 2026-11-01 | same | Cursor | `rigup switch chat 3b` re-run with the fix | ✅ Pass — printed "Also moved Kilo modes to qwen2.5-coder:3b: code, ask, debug, orchestrator, plan"; test prompt answered |
+| 2026-11-01 | same (Python 3.14) | terminal | `rigup aider` | ⚠️ Bug found, fixed — install hint (`pip install aider-chat`) fails on Python 3.14 (pip falls back to aider 0.16.0, which fails to build); launch used `ollama/` instead of aider's documented `ollama_chat/` + `OLLAMA_API_BASE`. Fixed both; hint now points at aider's own installer |
+| 2026-11-01 | same | terminal | `rigup aider` re-run after installing aider with its official installer | ✅ Pass — launched with `ollama_chat/qwen2.5-coder:3b` and replied to a prompt |
 
-Still to run on real hardware: re-run `uninstall` with the fix, `guard`, `aider`, fresh-machine Ollama install (§1), Linux (§1), Windows (§6).
+Still to run on real hardware: re-run `uninstall` with the fix, `guard`, Kilo Code agent mode with a 32k context, fresh-machine Ollama install (§1), Linux (§1), Windows (§6).
 
 ## What's already been verified, so you don't need to re-check it
 
