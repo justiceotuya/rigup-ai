@@ -164,4 +164,45 @@ describe("patchKiloConfig", () => {
     expect(Object.keys(parsed.provider.ollama.models)).toContain("qwen2.5-coder:3b"); // old registration still there, harmless
     expect(Object.keys(parsed.provider.ollama.models)).toContain("qwen2.5-coder:7b");
   });
+  it("moves per-mode overrides that followed the old default, leaving deliberate ones alone", async () => {
+    // Shape taken from a real kilo.jsonc after `rigup init` + Kilo's own setup.
+    const { patchKiloConfig, kiloConfigPath } = await import("../kiloConfigWriter.js");
+    const configPath = kiloConfigPath();
+    await fs.mkdir(path.dirname(configPath), { recursive: true });
+    await fs.writeFile(
+      configPath,
+      JSON.stringify(
+        {
+          model: "ollama/qwen2.5-coder:7b",
+          agent: {
+            code: { model: "ollama/qwen2.5-coder:7b" },
+            ask: { model: "ollama/qwen2.5-coder:7b" },
+            debug: { model: "ollama/qwen2.5-coder:7b" },
+            orchestrator: { model: "ollama/qwen2.5-coder:7b" },
+            plan: { model: "anthropic/claude-sonnet-4-6" }, // chosen on purpose
+            custom: {}, // no model set: inherits the default
+          },
+        },
+        null,
+        2
+      )
+    );
+
+    const result = await patchKiloConfig("qwen2.5-coder:3b"); // simulate `rigup switch chat 3b`
+    const parsed = parseJsonc(await fs.readFile(result.path, "utf-8"));
+
+    expect(parsed.model).toBe("ollama/qwen2.5-coder:3b");
+    expect(result.updatedModes.sort()).toEqual(["ask", "code", "debug", "orchestrator"]);
+    for (const mode of ["code", "ask", "debug", "orchestrator"]) {
+      expect(parsed.agent[mode].model).toBe("ollama/qwen2.5-coder:3b");
+    }
+    expect(parsed.agent.plan.model).toBe("anthropic/claude-sonnet-4-6");
+    expect(parsed.agent.custom.model).toBeUndefined();
+  });
+
+  it("reports no updated modes on a fresh config", async () => {
+    const { patchKiloConfig } = await import("../kiloConfigWriter.js");
+    const result = await patchKiloConfig("qwen2.5-coder:7b");
+    expect(result.updatedModes).toEqual([]);
+  });
 });

@@ -1,11 +1,13 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { modify, applyEdits } from "jsonc-parser";
+import { modify, applyEdits, parse } from "jsonc-parser";
 
 export interface KiloPatchResult {
   path: string;
   created: boolean;
+  /** Per-mode overrides (agent.<mode>.model) moved along with the default. */
+  updatedModes: string[];
 }
 
 const FORMATTING = { insertSpaces: true, tabSize: 2, eol: "\n" };
@@ -69,7 +71,34 @@ export async function patchKiloConfig(chatModel: string): Promise<KiloPatchResul
   const created = !(await fileExists(configPath));
   let text = created ? "{\n}\n" : await fs.readFile(configPath, "utf-8");
 
-  text = applyEdits(text, modify(text, ["model"], `ollama/${chatModel}`, { formattingOptions: FORMATTING }));
+  const newModel = `ollama/${chatModel}`;
+  const before = (parse(text) ?? {}) as {
+    model?: unknown;
+    agent?: Record<string, { model?: unknown } | null | undefined>;
+  };
+  const previousDefault = typeof before.model === "string" ? before.model : undefined;
+
+  text = applyEdits(text, modify(text, ["model"], newModel, { formattingOptions: FORMATTING }));
+
+  // Kilo stores a model per mode under `agent.<mode>.model` (code, ask,
+  // debug, orchestrator, plan…), and those override the top-level `model`.
+  // Kilo fills them in to match the default, so changing only `model` left
+  // every mode on the old model (caught on real hardware: `rigup switch`
+  // reported success while Kilo kept using the previous model). Move a mode
+  // only when it still matches the previous default; a mode the person
+  // pointed at something else on purpose is left alone.
+  const updatedModes: string[] = [];
+  if (previousDefault && previousDefault !== newModel && before.agent && typeof before.agent === "object") {
+    for (const [mode, cfg] of Object.entries(before.agent)) {
+      if (cfg && typeof cfg === "object" && cfg.model === previousDefault) {
+        text = applyEdits(
+          text,
+          modify(text, ["agent", mode, "model"], newModel, { formattingOptions: FORMATTING })
+        );
+        updatedModes.push(mode);
+      }
+    }
+  }
   text = applyEdits(
     text,
     modify(
@@ -93,5 +122,5 @@ export async function patchKiloConfig(chatModel: string): Promise<KiloPatchResul
   );
 
   await fs.writeFile(configPath, text, "utf-8");
-  return { path: configPath, created };
+  return { path: configPath, created, updatedModes };
 }

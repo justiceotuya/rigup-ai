@@ -75,6 +75,9 @@ export async function runSwitch(role: string, size: string, options: SwitchOptio
         try {
           const result = await patchKiloConfig(modelName);
           console.log(pc.gray(`Updated Kilo Code config → ${result.path}`));
+          if (result.updatedModes.length > 0) {
+            console.log(pc.gray(`  Also moved Kilo modes to ${modelName}: ${result.updatedModes.join(", ")}`));
+          }
         } catch (err) {
           console.log(pc.yellow(`Couldn't update Kilo Code config: ${(err as Error).message}`));
           continue;
