@@ -3,7 +3,7 @@ import os from "node:os";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { execa } from "execa";
-import { readState, RIGUP_DIR } from "../state.js";
+import { readState, settingsDirs } from "../state.js";
 import { ollamaUninstallSteps } from "../uninstallPlan.js";
 import {
   introBanner,
@@ -96,12 +96,17 @@ export async function runUninstall(): Promise<void> {
   // State is removed last: if anything above needed to read model names
   // from it, this ordering guarantees that data was still there to read.
   if (targets.includes("state")) {
-    try {
-      await fs.rm(RIGUP_DIR, { recursive: true, force: true });
-      successNote("Removed RigUp AI settings.");
-    } catch {
-      warnNote(`Couldn't remove ${RIGUP_DIR} — remove it manually if needed.`);
+    // Includes the pre-rename ~/.localstack, which readState() falls back to.
+    let removedAll = true;
+    for (const dir of settingsDirs()) {
+      try {
+        await fs.rm(dir, { recursive: true, force: true });
+      } catch {
+        removedAll = false;
+        warnNote(`Couldn't remove ${dir} — remove it manually if needed.`);
+      }
     }
+    if (removedAll) successNote("Removed RigUp AI settings.");
   }
 
   outroSuccess("Uninstall complete. 👋");

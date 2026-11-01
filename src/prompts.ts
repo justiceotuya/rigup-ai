@@ -226,7 +226,7 @@ export async function selectUninstallTargets(
   const selection = await p.multiselect({
     message: `🧹 ${pc.bold("What would you like to remove?")} ${pc.dim("(Space to select, Enter to confirm)")}`,
     options: [
-      { value: "state" as const, label: "🗂️  RigUp AI settings (~/.rigup)" },
+      { value: "state" as const, label: "🗂️  RigUp AI settings (~/.rigup, plus legacy ~/.localstack)" },
       {
         value: "models" as const,
         label: `🧠 Models RigUp AI pulled${modelSummary ? ` (${modelSummary})` : ""}`,

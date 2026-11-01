@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { parseDocument } from "yaml";
 import { patchContinueConfig } from "../configWriter.js";
-import { readState, defaultState } from "../state.js";
+import { readState, defaultState, settingsDirs, RIGUP_DIR, LEGACY_DIR } from "../state.js";
 
 /**
  * The project was renamed from "LocalStack" to "RigUp AI". Existing users
@@ -78,5 +78,11 @@ describe("rename migration", () => {
       "RigUp AI — Autocomplete (Ollama)",
     ]);
     expect(models[0]?.model).toBe("qwen2.5-coder:7b");
+  });
+  it("treats the legacy folder as settings, so uninstall removes it too", () => {
+    // Otherwise readState() would fall back to stale ~/.localstack data
+    // after an uninstall and report the tool as still configured.
+    expect(settingsDirs()).toEqual([RIGUP_DIR, LEGACY_DIR]);
+    expect(LEGACY_DIR.endsWith(".localstack")).toBe(true);
   });
 });

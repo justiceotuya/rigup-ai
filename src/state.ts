@@ -34,7 +34,17 @@ export type State = z.infer<typeof StateSchema>;
 export const RIGUP_DIR = path.join(os.homedir(), ".rigup");
 export const STATE_PATH = path.join(RIGUP_DIR, "state.json");
 /** Where state lived before the rename from "LocalStack" (read-only fallback). */
-export const LEGACY_STATE_PATH = path.join(os.homedir(), ".localstack", "state.json");
+export const LEGACY_DIR = path.join(os.homedir(), ".localstack");
+export const LEGACY_STATE_PATH = path.join(LEGACY_DIR, "state.json");
+
+/**
+ * Every directory that holds RigUp AI settings. Uninstall must remove all of
+ * them: readState() falls back to the legacy one, so leaving it behind would
+ * make a "removed" install look configured again from stale data.
+ */
+export function settingsDirs(): string[] {
+  return [RIGUP_DIR, LEGACY_DIR];
+}
 
 export function defaultState(): State {
   return {
