@@ -277,7 +277,7 @@ export async function confirmDeleteModelWeights(): Promise<boolean> {
 }
 
 /**
- * Interactive command picker for the bare `rigup` / `yarn dev`
+ * Interactive command picker for the bare `rigup` / `npm run dev`
  * invocation (no subcommand given). Returns null on cancel so the caller
  * can exit cleanly instead of erroring out.
  */

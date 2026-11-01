@@ -17,7 +17,7 @@ program
   .description("Provision and manage a local, offline AI coding stack")
   .version("0.1.0");
 
-// Bare `rigup` / `yarn dev` — don't error; ask which command to run.
+// Bare `rigup` / `npm run dev` — don't error; ask which command to run.
 program.action(async () => {
   await runInteractiveLauncher();
 });

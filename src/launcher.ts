@@ -13,7 +13,7 @@ import {
 
 /**
  * Interactive entry when the user runs the CLI with no subcommand
- * (`yarn dev` / bare `rigup`). Lists every command and dispatches
+ * (`npm run dev` / bare `rigup`). Lists every command and dispatches
  * to the matching handler — prompting for required args where needed.
  */
 export async function runInteractiveLauncher(): Promise<void> {
