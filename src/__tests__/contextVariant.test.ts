@@ -122,3 +122,17 @@ describe("planAgentContext", () => {
     expect(plan.toolCapable).toBeNull();
   });
 });
+
+describe("agentReliable", () => {
+  it("is false on 16 GB even when the context fits and tools are supported (real-hardware finding)", () => {
+    const plan = planAgentContext({ sizeBytes: 1.9 * GB, modelInfo: qwen25coder_7b, capabilities: ["tools"] }, 16 * GB);
+    expect(plan.numCtx).toBe(32768);
+    expect(plan.agentReliable).toBe(false);
+  });
+  it("is true on 32 GB with a tool-capable model at 32k", () => {
+    const plan = planAgentContext({ sizeBytes: 5.2 * GB, modelInfo: qwen3_8b, capabilities: ["tools"] }, 32 * GB);
+    expect(plan.agentReliable).toBe(true);
+    expect(plan.warnings).toEqual([]);
+  });
+});
+

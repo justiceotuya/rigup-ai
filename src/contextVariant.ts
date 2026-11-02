@@ -62,9 +62,14 @@ export function fitContextTokens(input: {
   return CONTEXT_STEPS[CONTEXT_STEPS.length - 1]!;
 }
 
+/** Below this, real-hardware testing found Kilo's agent unreliable with any model that fits. */
+export const AGENT_RECOMMENDED_RAM_BYTES = 32 * 1024 ** 3;
+
 export interface AgentContextPlan {
   numCtx: number;
   toolCapable: boolean | null;
+  /** False when this machine/model combination can't be expected to drive Kilo's agent. */
+  agentReliable: boolean;
   /** Why the plan falls short of what an agent needs, if it does. */
   warnings: string[];
 }
@@ -89,7 +94,14 @@ export function planAgentContext(facts: ModelFacts, totalRamBytes: number): Agen
   if (toolCapable === false) {
     warnings.push("Ollama reports this model doesn't support tool calls, which Kilo Code's agent relies on.");
   }
-  return { numCtx, toolCapable, warnings };
+  if (totalRamBytes < AGENT_RECOMMENDED_RAM_BYTES) {
+    warnings.push(
+      "Kilo Code's agent works best with 24–30B models, which need about 32 GB of RAM or more. On this machine, local models usually can't drive the agent reliably (in testing on 16 GB they printed tool calls as text, and a larger model froze the Mac)."
+    );
+  }
+  const agentReliable =
+    numCtx >= AGENT_CONTEXT_TOKENS && toolCapable !== false && totalRamBytes >= AGENT_RECOMMENDED_RAM_BYTES;
+  return { numCtx, toolCapable, agentReliable, warnings };
 }
 
 /** Fetches the model's facts and plans a context that fits this machine. */

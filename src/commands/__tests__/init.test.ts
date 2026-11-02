@@ -22,8 +22,10 @@ vi.mock("../../ollama.js", () => ({
 
 vi.mock("../../kiloConfigWriter.js", () => ({ patchKiloConfig: patchKiloConfigMock }));
 const ensureContextVariantMock = vi.fn();
+const planForModelMock = vi.fn();
+const confirmKiloDespiteLimitsMock = vi.fn();
 vi.mock("../../contextVariant.js", () => ({
-  planForModel: vi.fn().mockResolvedValue({ numCtx: 32768, toolCapable: true, warnings: [] }),
+  planForModel: planForModelMock,
   ensureContextVariant: ensureContextVariantMock,
 }));
 
@@ -58,6 +60,7 @@ vi.mock("../../prompts.js", () => ({
   selectEditor: selectEditorMock,
   confirmInstallOllama: vi.fn(),
   confirmContinueSetup: vi.fn(),
+  confirmKiloDespiteLimits: confirmKiloDespiteLimitsMock,
   selectModelChoice: selectModelChoiceMock,
   stepNote: vi.fn(),
   warnNote: vi.fn(),
@@ -110,6 +113,9 @@ beforeEach(() => {
   testGenerateMock.mockReset();
   patchKiloConfigMock.mockReset();
   ensureContextVariantMock.mockReset();
+  planForModelMock.mockReset();
+  planForModelMock.mockResolvedValue({ numCtx: 32768, toolCapable: true, agentReliable: true, warnings: [] });
+  confirmKiloDespiteLimitsMock.mockReset();
   ensureContextVariantMock.mockImplementation(async (m: string) => `${m}-rigup-32k`);
   selectEditorMock.mockReset();
   selectModelChoiceMock.mockReset();
@@ -233,6 +239,40 @@ describe("runInit — Kilo Code auto-configure", () => {
 
     expect(patchKiloConfigMock).toHaveBeenCalledWith("qwen2.5-coder:7b", { contextTokens: undefined, toolCall: true });
     expect(testGenerateMock).toHaveBeenCalledWith("qwen2.5-coder:7b");
+  });
+
+  describe("on machines where Kilo's agent isn't expected to work", () => {
+    const kiloFound = () =>
+      discoverAgentExtensionsMock.mockResolvedValueOnce([
+        { candidate: { id: "kilocode.kilo-code", label: "Kilo Code", status: "active" }, dir: "/fake/kilo" },
+      ]);
+    const unreliable = { numCtx: 16384, toolCapable: true, agentReliable: false, warnings: ["16 GB"] };
+
+    it("asks first, and leaves Kilo untouched when the answer is No (the default)", async () => {
+      selectEditorMock.mockResolvedValueOnce({ id: "cursor" });
+      selectModelChoiceMock.mockResolvedValueOnce({ type: "recommended" });
+      kiloFound();
+      planForModelMock.mockResolvedValueOnce(unreliable);
+      confirmKiloDespiteLimitsMock.mockResolvedValueOnce(false);
+
+      await runInit({});
+
+      expect(confirmKiloDespiteLimitsMock).toHaveBeenCalled();
+      expect(ensureContextVariantMock).not.toHaveBeenCalled();
+      expect(patchKiloConfigMock).not.toHaveBeenCalled();
+    });
+
+    it("still configures Kilo if the person opts in", async () => {
+      selectEditorMock.mockResolvedValueOnce({ id: "cursor" });
+      selectModelChoiceMock.mockResolvedValueOnce({ type: "recommended" });
+      kiloFound();
+      planForModelMock.mockResolvedValueOnce(unreliable);
+      confirmKiloDespiteLimitsMock.mockResolvedValueOnce(true);
+
+      await runInit({});
+
+      expect(patchKiloConfigMock).toHaveBeenCalledWith("qwen2.5-coder:7b-rigup-32k", { contextTokens: 16384, toolCall: true });
+    });
   });
 
   it("does NOT attempt to configure Roo Code or Cline — only Kilo Code has a confirmed-safe format", async () => {

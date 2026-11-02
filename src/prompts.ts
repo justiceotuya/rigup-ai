@@ -202,6 +202,22 @@ export async function confirmInstallExtension(editorLabel: string, extensionLabe
   return answer as boolean;
 }
 
+/**
+ * Default is No: on machines where the agent can't be expected to work,
+ * silently configuring it just produces a broken experience (or a frozen
+ * machine). Continue.dev chat and autocomplete are set up either way.
+ */
+export async function confirmKiloDespiteLimits(): Promise<boolean> {
+  const answer = await p.confirm({
+    message: `🧩 ${pc.bold("Configure Kilo Code's agent anyway?")} ${pc.gray("(Continue.dev chat + autocomplete are already set up)")}`,
+    active: "Yes, try it",
+    inactive: "No, skip Kilo",
+    initialValue: false,
+  });
+  if (p.isCancel(answer)) return false;
+  return answer as boolean;
+}
+
 export async function confirmContinueSetup(): Promise<boolean> {
   const answer = await p.confirm({
     message: `🦙 ${pc.bold("Ollama is ready! Continue setting up RigUp AI now?")}`,

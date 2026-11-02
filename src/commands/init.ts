@@ -15,6 +15,7 @@ import {
   stepNote,
   warnNote,
   successNote,
+  confirmKiloDespiteLimits,
 } from "../prompts.js";
 import { editorById } from "../editors.js";
 import { continueConfigDir, globalStorageDir } from "../paths.js";
@@ -249,6 +250,13 @@ export async function runInit(options: InitOptions): Promise<void> {
     // for more over its OpenAI-compatible endpoint. See contextVariant.ts.
     // Sized to this machine's RAM (a fixed 32k froze a 16 GB Mac).
     const plan = await planForModel(finalModels.chatAgent);
+    if (!plan.agentReliable) {
+      for (const warning of plan.warnings) warnNote(warning);
+      if (!(await confirmKiloDespiteLimits())) {
+        stepNote("🧩", "Skipped Kilo Code — its config was left untouched. Use Continue.dev for chat and autocomplete.");
+        return;
+      }
+    }
     let kiloModel = finalModels.chatAgent;
     let variantCreated = false;
     try {
@@ -260,7 +268,7 @@ export async function runInit(options: InitOptions): Promise<void> {
         `Couldn't create a larger-context variant (${(err as Error).message}). Kilo will use Ollama's default 4k context, which is too small for agent tasks.`
       );
     }
-    for (const warning of plan.warnings) warnNote(warning);
+    if (plan.agentReliable) for (const warning of plan.warnings) warnNote(warning);
     try {
       const result = await patchKiloConfig(kiloModel, {
         contextTokens: variantCreated ? plan.numCtx : undefined,
