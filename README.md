@@ -22,6 +22,17 @@ without spending an afternoon reading Ollama, Continue.dev and Kilo Code docs to
 model tags, config paths and editor extensions right. Also teams who want everyone on the
 same local setup: commit a `rigup.yaml` and `rigup init` picks it up.
 
+## What to expect on your hardware
+
+Measured on real machines, not guessed:
+
+| RAM | Continue.dev chat + autocomplete | Kilo Code agent mode |
+| --- | --- | --- |
+| 8–16 GB | ✅ Works well (`qwen2.5-coder` 7B + 1.5B) | ⚠️ Not reliable. Models that fit tend to print tool calls as text, and larger ones exhaust memory. `rigup init` asks before configuring it (default: skip) |
+| 32 GB+ | ✅ | Usable with a tool-capable model at 32k context. Kilo's own docs recommend 24–30B models |
+
+RigUp AI sizes each model's context window to your RAM (Ollama's default is 4k, too small for agents), so it won't set up something that freezes your machine.
+
 ## How it compares
 
 Wiring local models into coding tools is a crowded space, so here's where RigUp AI fits:
