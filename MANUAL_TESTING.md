@@ -226,8 +226,13 @@ you actually own.
 | 2026-11-01 | same | Cursor | `rigup switch chat 3b` re-run with the fix | ✅ Pass — printed "Also moved Kilo modes to qwen2.5-coder:3b: code, ask, debug, orchestrator, plan"; test prompt answered |
 | 2026-11-01 | same (Python 3.14) | terminal | `rigup aider` | ⚠️ Bug found, fixed — install hint (`pip install aider-chat`) fails on Python 3.14 (pip falls back to aider 0.16.0, which fails to build); launch used `ollama/` instead of aider's documented `ollama_chat/` + `OLLAMA_API_BASE`. Fixed both; hint now points at aider's own installer |
 | 2026-11-01 | same | terminal | `rigup aider` re-run after installing aider with its official installer | ✅ Pass — launched with `ollama_chat/qwen2.5-coder:3b` and replied to a prompt |
+| 2026-11-01 | same | Cursor | Kilo Code agent, `qwen2.5-coder:3b`/`7b` at Ollama's default context | ❌ Found — Kilo printed tool calls as plain JSON and ignored the request. Cause: Ollama's 4k default truncated Kilo's system prompt and tool schemas. Fixed by giving Kilo a larger-context model variant |
+| 2026-11-01 | same | Cursor | Kilo Code agent, `qwen2.5-coder:7b` with 32k context | ❌ Still failing — model now saw the full prompt (it knew the workspace path) but still emitted tool calls as text: a model limitation, not config |
+| 2026-11-01 | same | Cursor | Kilo Code agent, `qwen3:8b` with 32k context | ❌ Mac froze — ~5 GB weights + ~4.5 GB KV cache at 32k, plus the autocomplete model and editor, exhausted 16 GB. Fixed: context is now sized per model from its architecture to fit half of RAM (qwen3:8b → 16k on 16 GB), and setup warns when the result can't run Kilo's agent well |
 
-Still to run on real hardware: re-run `uninstall` with the fix, `guard`, Kilo Code agent mode with a 32k context, fresh-machine Ollama install (§1), Linux (§1), Windows (§6).
+Still to run on real hardware: re-run `uninstall` with the fix, `guard`, memory-sized Kilo setup on 16 GB, fresh-machine Ollama install (§1), Linux (§1), Windows (§6).
+
+**Finding so far:** on a 16 GB Mac, Continue.dev chat and autocomplete work well with local models; Kilo Code's agent mode does not — models that fit don't call tools reliably, and ones that do need more memory than is left. Kilo's own docs recommend 24–30B models.
 
 ## What's already been verified, so you don't need to re-check it
 
