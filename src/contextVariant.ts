@@ -2,7 +2,7 @@ import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { execa } from "execa";
-import { listModels } from "./ollama.js";
+import { listModels, getModelFacts, type ModelFacts } from "./ollama.js";
 
 /**
  * Ollama serves every model with a 4096-token context unless told
@@ -19,6 +19,83 @@ import { listModels } from "./ollama.js";
  * change the global default for anything else.
  */
 export const AGENT_CONTEXT_TOKENS = 32768;
+
+/**
+ * A fixed 32k froze a 16 GB Mac on real hardware: qwen3:8b's KV cache at
+ * 32k is ~4.5 GB on top of ~5 GB of weights, before the editor, the
+ * autocomplete model and the OS. So the context is sized per model from
+ * its architecture, keeping the chat model within this share of RAM.
+ */
+export const CHAT_MODEL_RAM_SHARE = 0.5;
+const CONTEXT_STEPS = [32768, 24576, 16384, 12288, 8192, 4096];
+
+/**
+ * f16 KV cache bytes per token: 2 (K and V) × layers × kv_heads × head_dim × 2 bytes.
+ * Returns null when the architecture fields aren't available.
+ */
+export function kvBytesPerToken(modelInfo: Record<string, unknown>): number | null {
+  const arch = typeof modelInfo["general.architecture"] === "string" ? modelInfo["general.architecture"] : null;
+  if (!arch) return null;
+  const num = (key: string): number | null => {
+    const v = modelInfo[`${arch}.${key}`];
+    return typeof v === "number" && v > 0 ? v : null;
+  };
+  const layers = num("block_count");
+  const heads = num("attention.head_count");
+  const kvHeads = num("attention.head_count_kv") ?? heads;
+  const headDim = num("attention.key_length") ?? (num("embedding_length") && heads ? num("embedding_length")! / heads : null);
+  if (!layers || !kvHeads || !headDim) return null;
+  return 2 * layers * kvHeads * headDim * 2;
+}
+
+/** Largest context step whose weights + KV cache fit in the chat model's RAM share. */
+export function fitContextTokens(input: {
+  weightsBytes: number;
+  kvBytesPerToken: number;
+  totalRamBytes: number;
+  share?: number;
+}): number {
+  const budget = input.totalRamBytes * (input.share ?? CHAT_MODEL_RAM_SHARE) - input.weightsBytes;
+  for (const step of CONTEXT_STEPS) {
+    if (step * input.kvBytesPerToken <= budget) return step;
+  }
+  return CONTEXT_STEPS[CONTEXT_STEPS.length - 1]!;
+}
+
+export interface AgentContextPlan {
+  numCtx: number;
+  toolCapable: boolean | null;
+  /** Why the plan falls short of what an agent needs, if it does. */
+  warnings: string[];
+}
+
+export function planAgentContext(facts: ModelFacts, totalRamBytes: number): AgentContextPlan {
+  const warnings: string[] = [];
+  const kv = kvBytesPerToken(facts.modelInfo);
+  let numCtx: number;
+  if (kv && facts.sizeBytes) {
+    numCtx = fitContextTokens({ weightsBytes: facts.sizeBytes, kvBytesPerToken: kv, totalRamBytes });
+  } else {
+    // Can't estimate: stay conservative rather than risk freezing the machine.
+    numCtx = totalRamBytes >= 32 * 1024 ** 3 ? 16384 : 8192;
+    warnings.push("Couldn't read this model's architecture from Ollama, so a conservative context was chosen.");
+  }
+  if (numCtx < AGENT_CONTEXT_TOKENS) {
+    warnings.push(
+      `Only ${numCtx / 1024}k context fits in your RAM for this model; Kilo Code's agent needs ${AGENT_CONTEXT_TOKENS / 1024}k, so agent tasks will be unreliable. Chat and autocomplete in Continue.dev are unaffected.`
+    );
+  }
+  const toolCapable = facts.capabilities.length > 0 ? facts.capabilities.includes("tools") : null;
+  if (toolCapable === false) {
+    warnings.push("Ollama reports this model doesn't support tool calls, which Kilo Code's agent relies on.");
+  }
+  return { numCtx, toolCapable, warnings };
+}
+
+/** Fetches the model's facts and plans a context that fits this machine. */
+export async function planForModel(model: string, totalRamBytes: number = os.totalmem()): Promise<AgentContextPlan> {
+  return planAgentContext(await getModelFacts(model), totalRamBytes);
+}
 
 const VARIANT_SUFFIX = /-rigup-(\d+)k$/;
 

@@ -28,7 +28,7 @@ import { findAgentExtensionCandidate } from "../agentExtensions.js";
 import { CONTINUE_EXTENSION } from "../continueExtension.js";
 import { offerExtensionInstall } from "../offerExtensionInstall.js";
 import { patchKiloConfig } from "../kiloConfigWriter.js";
-import { ensureContextVariant, AGENT_CONTEXT_TOKENS } from "../contextVariant.js";
+import { ensureContextVariant, planForModel } from "../contextVariant.js";
 
 export interface InitOptions {
   tier?: Tier;
@@ -247,17 +247,25 @@ export async function runInit(options: InitOptions): Promise<void> {
   async function configureKiloAndTest(): Promise<void> {
     // Kilo needs a 32k context; Ollama's default is 4k and Kilo can't ask
     // for more over its OpenAI-compatible endpoint. See contextVariant.ts.
+    // Sized to this machine's RAM (a fixed 32k froze a 16 GB Mac).
+    const plan = await planForModel(finalModels.chatAgent);
     let kiloModel = finalModels.chatAgent;
+    let variantCreated = false;
     try {
-      kiloModel = await ensureContextVariant(finalModels.chatAgent);
-      successNote(`Created ${pc.cyan(kiloModel)} — ${finalModels.chatAgent} with a ${AGENT_CONTEXT_TOKENS / 1024}k context window for Kilo Code`);
+      kiloModel = await ensureContextVariant(finalModels.chatAgent, plan.numCtx);
+      variantCreated = true;
+      successNote(`Created ${pc.cyan(kiloModel)} — ${finalModels.chatAgent} with a ${plan.numCtx / 1024}k context window for Kilo Code`);
     } catch (err) {
       warnNote(
-        `Couldn't create a ${AGENT_CONTEXT_TOKENS / 1024}k-context variant (${(err as Error).message}). Kilo will use Ollama's default 4k context, which is too small for agent tasks.`
+        `Couldn't create a larger-context variant (${(err as Error).message}). Kilo will use Ollama's default 4k context, which is too small for agent tasks.`
       );
     }
+    for (const warning of plan.warnings) warnNote(warning);
     try {
-      const result = await patchKiloConfig(kiloModel);
+      const result = await patchKiloConfig(kiloModel, {
+        contextTokens: variantCreated ? plan.numCtx : undefined,
+        toolCall: plan.toolCapable ?? undefined,
+      });
       successNote(
         `${result.created ? "Created" : "Updated"} Kilo Code config → ${result.path}`
       );

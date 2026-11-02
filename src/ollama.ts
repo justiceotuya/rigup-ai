@@ -196,3 +196,47 @@ export async function runningModels(): Promise<OllamaModel[]> {
     .map((line) => ({ name: line.split(/\s+/)[0] ?? "" }))
     .filter((m) => m.name.length > 0);
 }
+
+export interface ModelFacts {
+  /** On-disk/in-memory size of the weights, in bytes (from /api/tags). */
+  sizeBytes: number | null;
+  /** Architecture fields from /api/show (e.g. "qwen2.block_count"). */
+  modelInfo: Record<string, unknown>;
+  /** Ollama-reported capabilities, e.g. ["completion", "tools"]. */
+  capabilities: string[];
+}
+
+/** Best-effort: returns what Ollama will tell us, never throws. */
+export async function getModelFacts(modelName: string): Promise<ModelFacts> {
+  const facts: ModelFacts = { sizeBytes: null, modelInfo: {}, capabilities: [] };
+  try {
+    const res = await fetch("http://127.0.0.1:11434/api/show", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model: modelName }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (res.ok) {
+      const data = (await res.json()) as { model_info?: unknown; capabilities?: unknown };
+      if (data.model_info && typeof data.model_info === "object") {
+        facts.modelInfo = data.model_info as Record<string, unknown>;
+      }
+      if (Array.isArray(data.capabilities)) {
+        facts.capabilities = data.capabilities.filter((c): c is string => typeof c === "string");
+      }
+    }
+  } catch {
+    /* leave defaults */
+  }
+  try {
+    const res = await fetch("http://127.0.0.1:11434/api/tags", { signal: AbortSignal.timeout(10000) });
+    if (res.ok) {
+      const data = (await res.json()) as { models?: { name?: string; model?: string; size?: number }[] };
+      const hit = data.models?.find((m) => m.name === modelName || m.model === modelName);
+      if (hit && typeof hit.size === "number") facts.sizeBytes = hit.size;
+    }
+  } catch {
+    /* leave defaults */
+  }
+  return facts;
+}

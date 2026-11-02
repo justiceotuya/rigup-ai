@@ -205,4 +205,11 @@ describe("patchKiloConfig", () => {
     const result = await patchKiloConfig("qwen2.5-coder:7b");
     expect(result.updatedModes).toEqual([]);
   });
+  it("records context and tool support for RigUp's own variants (unknown to Kilo's catalog)", async () => {
+    const { patchKiloConfig } = await import("../kiloConfigWriter.js");
+    const result = await patchKiloConfig("qwen3:8b-rigup-16k", { contextTokens: 16384, toolCall: true });
+    const entry = parseJsonc(await fs.readFile(result.path, "utf-8")).provider.ollama.models["qwen3:8b-rigup-16k"];
+    expect(entry.tool_call).toBe(true);
+    expect(entry.limit).toEqual({ context: 16384, output: 4096 });
+  });
 });

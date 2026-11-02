@@ -110,7 +110,9 @@ export async function runDoctor(): Promise<void> {
               label: `Kilo Code context window (needs ≥${AGENT_CONTEXT_TOKENS / 1024}k)`,
               ok: bigEnough && present,
               detail: !bigEnough
-                ? `Kilo uses ${tag} at Ollama's default 4k context — agent mode will misbehave. Re-run \`rigup init\` (or \`rigup switch chat <size>\`) to create a 32k variant.`
+                ? ctx === null
+                  ? `Kilo uses ${tag} at Ollama's default 4k context — agent mode will misbehave. Re-run \`rigup init\` to create a larger-context variant.`
+                  : `Kilo has a ${ctx / 1024}k context — the most that fits your RAM for this model. Agent tasks need ${AGENT_CONTEXT_TOKENS / 1024}k; try a smaller model, or use Continue.dev for chat.`
                 : present
                   ? undefined
                   : `${tag} is configured but missing from Ollama. Re-run \`rigup init\`.`,

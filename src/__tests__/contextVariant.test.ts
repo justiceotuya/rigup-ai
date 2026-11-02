@@ -58,3 +58,67 @@ describe("ensureContextVariant", () => {
     expect(args[2]).toBe("-f");
   });
 });
+
+const { kvBytesPerToken, fitContextTokens, planAgentContext } = await import("../contextVariant.js");
+
+const GB = 1024 ** 3;
+// Architecture fields as returned by Ollama's /api/show for these models.
+const qwen3_8b = {
+  "general.architecture": "qwen3",
+  "qwen3.block_count": 36,
+  "qwen3.attention.head_count": 32,
+  "qwen3.attention.head_count_kv": 8,
+  "qwen3.attention.key_length": 128,
+};
+const qwen25coder_7b = {
+  "general.architecture": "qwen2",
+  "qwen2.block_count": 28,
+  "qwen2.attention.head_count": 28,
+  "qwen2.attention.head_count_kv": 4,
+  "qwen2.embedding_length": 3584,
+};
+
+describe("kvBytesPerToken", () => {
+  it("computes f16 KV cache size per token from the architecture", () => {
+    expect(kvBytesPerToken(qwen3_8b)).toBe(2 * 36 * 8 * 128 * 2); // 147,456 B ≈ 144 KiB
+  });
+  it("derives head_dim from embedding_length / head_count when key_length is absent", () => {
+    expect(kvBytesPerToken(qwen25coder_7b)).toBe(2 * 28 * 4 * 128 * 2);
+  });
+  it("returns null when the architecture is unknown", () => {
+    expect(kvBytesPerToken({})).toBeNull();
+  });
+});
+
+describe("fitContextTokens", () => {
+  it("does not give qwen3:8b a 32k context on a 16 GB machine (the setup that froze a real Mac)", () => {
+    const ctx = fitContextTokens({ weightsBytes: 5.2 * GB, kvBytesPerToken: kvBytesPerToken(qwen3_8b)!, totalRamBytes: 16 * GB });
+    expect(ctx).toBeLessThan(32768);
+    expect(5.2 * GB + ctx * kvBytesPerToken(qwen3_8b)!).toBeLessThanOrEqual(8 * GB);
+  });
+  it("gives qwen2.5-coder:7b the full 32k on 16 GB (small KV cache)", () => {
+    expect(fitContextTokens({ weightsBytes: 4.7 * GB, kvBytesPerToken: kvBytesPerToken(qwen25coder_7b)!, totalRamBytes: 16 * GB })).toBe(32768);
+  });
+  it("gives qwen3:8b 32k on a 32 GB machine", () => {
+    expect(fitContextTokens({ weightsBytes: 5.2 * GB, kvBytesPerToken: kvBytesPerToken(qwen3_8b)!, totalRamBytes: 32 * GB })).toBe(32768);
+  });
+});
+
+describe("planAgentContext", () => {
+  it("warns when the context that fits is below what Kilo's agent needs", () => {
+    const plan = planAgentContext({ sizeBytes: 5.2 * GB, modelInfo: qwen3_8b, capabilities: ["completion", "tools"] }, 16 * GB);
+    expect(plan.numCtx).toBeLessThan(32768);
+    expect(plan.toolCapable).toBe(true);
+    expect(plan.warnings.join(" ")).toMatch(/agent tasks will be unreliable/);
+  });
+  it("flags models Ollama says can't call tools", () => {
+    const plan = planAgentContext({ sizeBytes: 4.7 * GB, modelInfo: qwen25coder_7b, capabilities: ["completion", "insert"] }, 16 * GB);
+    expect(plan.toolCapable).toBe(false);
+    expect(plan.warnings.join(" ")).toMatch(/doesn't support tool calls/);
+  });
+  it("falls back conservatively when architecture can't be read", () => {
+    const plan = planAgentContext({ sizeBytes: null, modelInfo: {}, capabilities: [] }, 16 * GB);
+    expect(plan.numCtx).toBe(8192);
+    expect(plan.toolCapable).toBeNull();
+  });
+});

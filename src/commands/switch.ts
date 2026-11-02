@@ -7,7 +7,7 @@ import { discoverAgentExtensions } from "../extensionDiscovery.js";
 import { agentExtensionSetupSteps } from "../agentExtensionGuide.js";
 import { getModelFamily } from "../modelFamilies.js";
 import { patchKiloConfig } from "../kiloConfigWriter.js";
-import { ensureContextVariant } from "../contextVariant.js";
+import { ensureContextVariant, planForModel } from "../contextVariant.js";
 
 export interface SwitchOptions {
   family?: string;
@@ -73,16 +73,23 @@ export async function runSwitch(role: string, size: string, options: SwitchOptio
     );
     for (const match of matches) {
       if (match.candidate.id === "kilocode.kilo-code") {
+        const plan = await planForModel(modelName);
         let kiloModel = modelName;
+        let variantCreated = false;
         try {
-          kiloModel = await ensureContextVariant(modelName);
+          kiloModel = await ensureContextVariant(modelName, plan.numCtx);
+          variantCreated = true;
         } catch (err) {
           console.log(
-            pc.yellow(`Couldn't create a 32k-context variant (${(err as Error).message}); Kilo will get Ollama's 4k default.`)
+            pc.yellow(`Couldn't create a larger-context variant (${(err as Error).message}); Kilo will get Ollama's 4k default.`)
           );
         }
+        for (const warning of plan.warnings) console.log(pc.yellow(`⚠️  ${warning}`));
         try {
-          const result = await patchKiloConfig(kiloModel);
+          const result = await patchKiloConfig(kiloModel, {
+            contextTokens: variantCreated ? plan.numCtx : undefined,
+            toolCall: plan.toolCapable ?? undefined,
+          });
           console.log(pc.gray(`Updated Kilo Code config → ${result.path} (model ${kiloModel})`));
           if (result.updatedModes.length > 0) {
             console.log(pc.gray(`  Also moved Kilo modes to ${kiloModel}: ${result.updatedModes.join(", ")}`));

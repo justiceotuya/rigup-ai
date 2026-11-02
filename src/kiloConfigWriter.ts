@@ -64,7 +64,14 @@ async function fileExists(target: string): Promise<boolean> {
  * deliberately once they know how the model behaves, not have RigUp AI
  * assert facts about it that might be wrong.
  */
-export async function patchKiloConfig(chatModel: string): Promise<KiloPatchResult> {
+export interface KiloModelFacts {
+  /** Context window baked into the model (known exactly for RigUp's own variants). */
+  contextTokens?: number;
+  /** Whether Ollama reports tool support for the model. */
+  toolCall?: boolean;
+}
+
+export async function patchKiloConfig(chatModel: string, facts: KiloModelFacts = {}): Promise<KiloPatchResult> {
   const configPath = kiloConfigPath();
   await fs.mkdir(path.dirname(configPath), { recursive: true });
 
@@ -104,7 +111,15 @@ export async function patchKiloConfig(chatModel: string): Promise<KiloPatchResul
     modify(
       text,
       ["provider", "ollama", "models", chatModel],
-      { name: `${chatModel} (RigUp AI)` },
+      // Kilo looks models up in its catalog to learn tool support and
+      // limits; a RigUp variant tag (e.g. qwen3:8b-rigup-16k) isn't in it.
+      // These are facts RigUp knows rather than guesses: it baked the
+      // context into the variant itself and read tool support from Ollama.
+      {
+        name: `${chatModel} (RigUp AI)`,
+        ...(facts.toolCall !== undefined ? { tool_call: facts.toolCall } : {}),
+        ...(facts.contextTokens ? { limit: { context: facts.contextTokens, output: Math.min(8192, facts.contextTokens / 4) } } : {}),
+      },
       { formattingOptions: FORMATTING }
     )
   );

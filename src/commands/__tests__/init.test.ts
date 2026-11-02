@@ -21,6 +21,11 @@ vi.mock("../../ollama.js", () => ({
 }));
 
 vi.mock("../../kiloConfigWriter.js", () => ({ patchKiloConfig: patchKiloConfigMock }));
+const ensureContextVariantMock = vi.fn();
+vi.mock("../../contextVariant.js", () => ({
+  planForModel: vi.fn().mockResolvedValue({ numCtx: 32768, toolCapable: true, warnings: [] }),
+  ensureContextVariant: ensureContextVariantMock,
+}));
 
 vi.mock("../../state.js", () => ({
   writeState: writeStateMock,
@@ -104,6 +109,8 @@ beforeEach(() => {
   ensureModelMock.mockReset();
   testGenerateMock.mockReset();
   patchKiloConfigMock.mockReset();
+  ensureContextVariantMock.mockReset();
+  ensureContextVariantMock.mockImplementation(async (m: string) => `${m}-rigup-32k`);
   selectEditorMock.mockReset();
   selectModelChoiceMock.mockReset();
   findTeamProfileMock.mockReset();
@@ -206,7 +213,25 @@ describe("runInit — Kilo Code auto-configure", () => {
     // resolveModelsMock's default (set in the outer beforeEach) resolves
     // chatAgent to "qwen2.5-coder:7b" — confirms the actual selected model
     // is what gets wired through, not a placeholder.
-    expect(patchKiloConfigMock).toHaveBeenCalledWith("qwen2.5-coder:7b");
+    // Kilo gets the memory-sized context variant, with facts Kilo can't look up itself.
+    expect(patchKiloConfigMock).toHaveBeenCalledWith("qwen2.5-coder:7b-rigup-32k", { contextTokens: 32768, toolCall: true });
+    expect(testGenerateMock).toHaveBeenCalledWith("qwen2.5-coder:7b-rigup-32k");
+  });
+
+  it("falls back to the base model (no context facts) if the variant can't be created", async () => {
+    selectEditorMock.mockResolvedValueOnce({ id: "cursor" });
+    selectModelChoiceMock.mockResolvedValueOnce({ type: "recommended" });
+    discoverAgentExtensionsMock.mockResolvedValueOnce([
+      {
+        candidate: { id: "kilocode.kilo-code", label: "Kilo Code", status: "active" },
+        dir: "/fake/globalStorage/kilocode.kilo-code",
+      },
+    ]);
+    ensureContextVariantMock.mockRejectedValueOnce(new Error("ollama create failed"));
+
+    await runInit({});
+
+    expect(patchKiloConfigMock).toHaveBeenCalledWith("qwen2.5-coder:7b", { contextTokens: undefined, toolCall: true });
     expect(testGenerateMock).toHaveBeenCalledWith("qwen2.5-coder:7b");
   });
 
@@ -245,8 +270,9 @@ describe("runInit — Kilo Code auto-configure", () => {
 
     await runInit({});
 
-    expect(patchKiloConfigMock).toHaveBeenCalledWith("qwen2.5-coder:7b");
-    expect(testGenerateMock).toHaveBeenCalledWith("qwen2.5-coder:7b");
+    // Kilo gets the memory-sized context variant, with facts Kilo can't look up itself.
+    expect(patchKiloConfigMock).toHaveBeenCalledWith("qwen2.5-coder:7b-rigup-32k", { contextTokens: 32768, toolCall: true });
+    expect(testGenerateMock).toHaveBeenCalledWith("qwen2.5-coder:7b-rigup-32k");
   });
 
   it("configures Kilo Code when it's already installed via the CLI (offerExtensionInstall reports 'already-installed'), even if globalStorage scan found nothing", async () => {
@@ -260,8 +286,9 @@ describe("runInit — Kilo Code auto-configure", () => {
 
     await runInit({});
 
-    expect(patchKiloConfigMock).toHaveBeenCalledWith("qwen2.5-coder:7b");
-    expect(testGenerateMock).toHaveBeenCalledWith("qwen2.5-coder:7b");
+    // Kilo gets the memory-sized context variant, with facts Kilo can't look up itself.
+    expect(patchKiloConfigMock).toHaveBeenCalledWith("qwen2.5-coder:7b-rigup-32k", { contextTokens: 32768, toolCall: true });
+    expect(testGenerateMock).toHaveBeenCalledWith("qwen2.5-coder:7b-rigup-32k");
   });
 
   it("does NOT configure Kilo Code if the install offer was declined or failed", async () => {
